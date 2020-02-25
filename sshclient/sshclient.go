@@ -23,17 +23,17 @@ func defaultKeyPath() string {
 func ConfigSSH(user string, host string, port string) *ssh.Client {
 	key, err := ioutil.ReadFile(defaultKeyPath())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error reading private key", err)
 	}
 
 	signer, err := ssh.ParsePrivateKey(key)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error parsing private key", err)
 	}
 
 	hostKeyCallback, err := kh.New(path.Join(home, ".ssh/known_hosts"))
 	if err != nil {
-		log.Fatal("could not create hostkeycallback function: ", err)
+		log.Fatal("Could not create hostkeycallback function: ", err)
 	}
 
 	config := &ssh.ClientConfig{
@@ -47,7 +47,7 @@ func ConfigSSH(user string, host string, port string) *ssh.Client {
 	addr := fmt.Sprintf("%s:%s", host, port)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Could not dial to server", err)
 	}
 
 	return client
