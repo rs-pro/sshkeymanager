@@ -1,7 +1,7 @@
 package users
 
 import (
-	sshconf "github.com/ssh-key-manager/sshclient"
+	"github.com/ssh-key-manager/sshclient"
 	"log"
 	"strings"
 )
@@ -16,7 +16,7 @@ type User struct {
 var users []User
 
 func GetUsers(user string, host string, port string) []User {
-	client := sshconf.ConfigSSH(user, host, port)
+	client := sshclient.ConfigSSH(user, host, port)
 	defer client.Close()
 	session, err := client.NewSession()
 	if err != nil {
