@@ -39,9 +39,11 @@ func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 				k := strings.Fields(s)
 				if len(k) > 1 {
 					var sshKey SSHKey
-					sshKey.Num = i
+					sshKey.Num = i + 1
 					sshKey.Key = k[1]
-					sshKey.Email = k[2]
+					if len(k) > 2 {
+						sshKey.Email = k[2]
+					}
 					sshKeys = append(sshKeys, sshKey)
 				}
 			}
