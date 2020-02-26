@@ -8,6 +8,7 @@ import (
 	"path"
 	"golang.org/x/crypto/ssh"
 	kh "golang.org/x/crypto/ssh/knownhosts"
+	"time"
 )
 
 var home string
@@ -42,6 +43,7 @@ func ConfigSSH(user string, host string, port string) *ssh.Client {
 			ssh.PublicKeys(signer),
 		},
 		HostKeyCallback: hostKeyCallback,
+		Timeout:         10 * time.Second,
 	}
 
 	addr := fmt.Sprintf("%s:%s", host, port)
