@@ -1,28 +1,28 @@
-package sshclient
+package sshkeymanager
 
 import (
 	"fmt"
+	"golang.org/x/crypto/ssh"
+	kh "golang.org/x/crypto/ssh/knownhosts"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
-	"golang.org/x/crypto/ssh"
-	kh "golang.org/x/crypto/ssh/knownhosts"
 	"time"
 )
 
-var home string
+var Home string
 
-func defaultKeyPath() string {
-	home = os.Getenv("HOME")
-	if len(home) > 0 {
-		return path.Join(home, ".ssh/id_rsa")
+func DefaultKeyPath() string {
+	Home = os.Getenv("HOME")
+	if len(Home) > 0 {
+		return path.Join(Home, ".ssh/id_rsa")
 	}
 	return ""
 }
 
 func ConfigSSH(user string, host string, port string) *ssh.Client {
-	key, err := ioutil.ReadFile(defaultKeyPath())
+	key, err := ioutil.ReadFile(DefaultKeyPath())
 	if err != nil {
 		log.Fatal("Error reading private key", err)
 	}
@@ -32,7 +32,7 @@ func ConfigSSH(user string, host string, port string) *ssh.Client {
 		log.Fatal("Error parsing private key", err)
 	}
 
-	hostKeyCallback, err := kh.New(path.Join(home, ".ssh/known_hosts"))
+	hostKeyCallback, err := kh.New(path.Join(Home, ".ssh/known_hosts"))
 	if err != nil {
 		log.Fatal("Could not create hostkeycallback function: ", err)
 	}

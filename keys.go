@@ -1,8 +1,6 @@
-package keys
+package sshkeymanager
 
 import (
-	"github.com/ssh-key-manager/sshclient"
-	"github.com/ssh-key-manager/users"
 	"log"
 	"strings"
 )
@@ -17,11 +15,11 @@ var sshKeys []SSHKey
 
 func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 
-	usrs := users.GetUsers(rootUser, host, port)
+	usrs := GetUsers(rootUser, host, port)
 
 	for _, u := range usrs {
 		if u.UID == uid {
-			client := sshclient.ConfigSSH(rootUser, host, port)
+			client := ConfigSSH(rootUser, host, port)
 			defer client.Close()
 			session, err := client.NewSession()
 			if err != nil {
@@ -40,7 +38,7 @@ func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 				if len(k) > 1 {
 					var sshKey SSHKey
 					sshKey.Num = i + 1
-					sshKey.Key = k[1]
+					sshKey.Key = k[0] + " " + k[1]
 					if len(k) > 2 {
 						sshKey.Email = k[2]
 					}
@@ -51,4 +49,32 @@ func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 		}
 	}
 	return sshKeys
+}
+
+func DeleteKey(key string, uid string, rootUser string, host string, port string) {
+	var newKeys []SSHKey
+	keys := GetKeys(uid, rootUser, host, port)
+
+	for _, k := range keys {
+		if k.Key != key {
+			newKeys = append(newKeys, k)
+		}
+	}
+
+}
+
+func AddKey(key string, uid string, rootUser string, host string, port string) {
+
+	var k SSHKey
+
+	keys := GetKeys(uid, rootUser, host, port)
+	fields := strings.Fields(key)
+	k.Num = len(keys) + 1
+	k.Key = fields[0] + fields[1]
+	if len(fields) > 2 {
+		k.Email = fields[2]
+	}
+
+	keys = append(keys, k)
+
 }
