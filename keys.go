@@ -1,7 +1,9 @@
 package sshkeymanager
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -52,15 +54,24 @@ func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 }
 
 func DeleteKey(key string, uid string, rootUser string, host string, port string) {
-	var newKeys []SSHKey
+	var (
+		newKeys []SSHKey
+		newKey SSHKey
+	)
+
 	keys := GetKeys(uid, rootUser, host, port)
 
+	fields := strings.Fields(key)
+	newKey.Key = fields[0] + " " + fields[1]
+	if len(fields) > 2 {
+		newKey.Email = fields[2]
+	}
 	for _, k := range keys {
-		if k.Key != key {
+		if k.Key != newKey.Key {
 			newKeys = append(newKeys, k)
 		}
 	}
-
+	sync(newKeys)
 }
 
 func AddKey(key string, uid string, rootUser string, host string, port string) {
@@ -70,11 +81,30 @@ func AddKey(key string, uid string, rootUser string, host string, port string) {
 	keys := GetKeys(uid, rootUser, host, port)
 	fields := strings.Fields(key)
 	k.Num = len(keys) + 1
-	k.Key = fields[0] + fields[1]
+	k.Key = fields[0] + " " + fields[1]
 	if len(fields) > 2 {
 		k.Email = fields[2]
 	}
 
 	keys = append(keys, k)
+	sync(keys)
+}
+
+func sync(keys []SSHKey)  {
+	f, err := os.Create("authorized_keys")
+	if err != nil {
+		log.Fatal("Cannot create file ", err)
+		f.Close()
+		return
+	}
+
+	for _, k := range keys {
+		fmt.Fprintln(f, k.Key + " " + k.Email)
+	}
+	err = f.Close()
+	if err != nil {
+		log.Fatal("Cannot write to file", err)
+		return
+	}
 
 }
