@@ -110,6 +110,7 @@ func sync(keys []SSHKey, rootUser string, host string, port string)  {
 		return
 	}
 
+	//Using SCP for copy authorized_keys to server (maybe replace in future)
 	clientConfig, _ := auth.PrivateKey(rootUser, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
 
 	client := scp.NewClient(host + ":" + port, &clientConfig)
