@@ -11,7 +11,10 @@ import (
 	"time"
 )
 
-var Home string
+var (
+	Home string
+	HostKeyCallback ssh.HostKeyCallback
+)
 
 func DefaultKeyPath() string {
 	Home = os.Getenv("HOME")
@@ -32,7 +35,7 @@ func ConfigSSH(user string, host string, port string) *ssh.Client {
 		log.Fatal("Error parsing private key", err)
 	}
 
-	hostKeyCallback, err := kh.New(path.Join(Home, ".ssh/known_hosts"))
+	HostKeyCallback, err = kh.New(path.Join(Home, ".ssh/known_hosts"))
 	if err != nil {
 		log.Fatal("Could not create hostkeycallback function: ", err)
 	}
@@ -42,7 +45,7 @@ func ConfigSSH(user string, host string, port string) *ssh.Client {
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},
-		HostKeyCallback: hostKeyCallback,
+		HostKeyCallback: HostKeyCallback,
 		Timeout:         10 * time.Second,
 	}
 

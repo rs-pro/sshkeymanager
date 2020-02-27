@@ -2,8 +2,11 @@ package sshkeymanager
 
 import (
 	"fmt"
+	scp "github.com/bramvdbogaerde/go-scp"
+	"github.com/bramvdbogaerde/go-scp/auth"
 	"log"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -90,7 +93,7 @@ func AddKey(key string, uid string, rootUser string, host string, port string) {
 	sync(keys)
 }
 
-func sync(keys []SSHKey)  {
+func sync(keys []SSHKey, rootUser string, host string, port string)  {
 	f, err := os.Create("authorized_keys")
 	if err != nil {
 		log.Fatal("Cannot create file ", err)
@@ -106,5 +109,33 @@ func sync(keys []SSHKey)  {
 		log.Fatal("Cannot write to file", err)
 		return
 	}
+
+	clientConfig, _ := auth.PrivateKey(rootUser, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
+
+	client := scp.NewClient(host + ":" + port, &clientConfig)
+
+	errConn := client.Connect()
+	if errConn != nil {
+		log.Fatal("Couldn't establish a connection to the remote server ", err)
+		return
+	}
+
+	f, errFile := os.Open("authorized_keys")
+	if errFile != nil {
+		log.Fatal("Couldn't open file ", errFile)
+	}
+
+	defer client.Close()
+
+	defer f.Close()
+
+	//TODO remote path and set owner of file
+	//
+	err = client.CopyFile(f, "remote/user/path", "0600")
+
+	if err != nil {
+		log.Fatal("Error while copying file ", err)
+	}
+
 
 }
