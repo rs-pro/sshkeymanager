@@ -59,7 +59,7 @@ func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 func DeleteKey(key string, uid string, rootUser string, host string, port string) {
 	var (
 		newKeys []SSHKey
-		newKey SSHKey
+		newKey  SSHKey
 	)
 
 	keys := GetKeys(uid, rootUser, host, port)
@@ -74,7 +74,7 @@ func DeleteKey(key string, uid string, rootUser string, host string, port string
 			newKeys = append(newKeys, k)
 		}
 	}
-	sync(newKeys)
+	sync(newKeys, uid, rootUser, host, port)
 }
 
 func AddKey(key string, uid string, rootUser string, host string, port string) {
@@ -90,10 +90,10 @@ func AddKey(key string, uid string, rootUser string, host string, port string) {
 	}
 
 	keys = append(keys, k)
-	sync(keys)
+	sync(keys, uid, rootUser, host, port)
 }
 
-func sync(keys []SSHKey, rootUser string, host string, port string)  {
+func sync(keys []SSHKey, uid string, rootUser string, host string, port string) {
 	f, err := os.Create("authorized_keys")
 	if err != nil {
 		log.Fatal("Cannot create file ", err)
@@ -102,7 +102,7 @@ func sync(keys []SSHKey, rootUser string, host string, port string)  {
 	}
 
 	for _, k := range keys {
-		fmt.Fprintln(f, k.Key + " " + k.Email)
+		fmt.Fprintln(f, k.Key+" "+k.Email)
 	}
 	err = f.Close()
 	if err != nil {
@@ -113,7 +113,7 @@ func sync(keys []SSHKey, rootUser string, host string, port string)  {
 	//Using SCP for copy authorized_keys to server (maybe replace in future)
 	clientConfig, _ := auth.PrivateKey(rootUser, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
 
-	client := scp.NewClient(host + ":" + port, &clientConfig)
+	client := scp.NewClient(host+":"+port, &clientConfig)
 
 	errConn := client.Connect()
 	if errConn != nil {
@@ -130,13 +130,19 @@ func sync(keys []SSHKey, rootUser string, host string, port string)  {
 
 	defer f.Close()
 
-	//TODO remote path and set owner of file
-	//
-	err = client.CopyFile(f, "remote/user/path", "0600")
+	usrs := GetUsers(rootUser, host, port)
+	var homeDir string
 
-	if err != nil {
-		log.Fatal("Error while copying file ", err)
+	for _, h := range usrs {
+		if h.UID == uid {
+			homeDir = h.Home
+		}
 	}
 
+	errCopy := client.CopyFile(f, path.Join(homeDir, "/.ssh/authorized_keys"), "0600")
+
+	if errCopy != nil {
+		log.Fatal("Error while copying file ", err)
+	}
 
 }

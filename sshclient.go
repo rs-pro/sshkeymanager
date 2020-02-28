@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	Home string
+	Home            string
 	HostKeyCallback ssh.HostKeyCallback
 )
 
