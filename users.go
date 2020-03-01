@@ -32,14 +32,16 @@ func GetUsers(user string, host string, port string) []User {
 
 	for _, s := range strs {
 		u := strings.Split(s, ":")
-		if len(u) > 1 {
-			var user User
-			user.Name = u[0]
-			user.UID = u[2]
-			user.Home = u[5]
-			user.Shell = u[6]
-			users = append(users, user)
+		if len(s) == 0 {
+			continue
 		}
+		var user User
+		user.Name = u[0]
+		user.UID = u[2]
+		user.Home = u[5]
+		user.Shell = u[6]
+		users = append(users, user)
 	}
+
 	return users
 }
