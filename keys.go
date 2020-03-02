@@ -132,8 +132,8 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 
 	client := scp.NewClient(host+":"+port, &clientConfig)
 
-	errConn := client.Connect()
-	if errConn != nil {
+	err = client.Connect()
+	if err != nil {
 		log.Fatal("Couldn't establish a connection to the remote server ", err)
 		return
 	}
@@ -156,9 +156,9 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 		}
 	}
 
-	errCopy := client.CopyFile(f, path.Join(homeDir, "/.ssh/authorized_keys"), "0600")
+	err = client.CopyFile(f, path.Join(homeDir, "/.ssh/authorized_keys"), "0600")
 
-	if errCopy != nil {
+	if err != nil {
 		log.Fatal("Error while copying file ", err)
 	}
 	os.Remove("authorized_keys")
