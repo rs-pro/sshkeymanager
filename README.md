@@ -20,14 +20,14 @@ func main() {
 	users := sshkeymanager.GetUsers(rootUser, host, port)
 	
 	for _, u := range users {
-		fmt.Printf("UID: %v\n Username: %v\n Home dir: %v\n Shell: %v", u.UID, u.Name, u.Home, u.Shell)
+		fmt.Printf("UID: %v\nUsername: %v\nHome dir: %v\nShell: %v", u.UID, u.Name, u.Home, u.Shell)
 	}
 	
 	uid := "3104"
 	
 	keys := sshkeymanager.GetKeys(uid, rootUser, host, port)
 	for _, k := range keys {
-		fmt.Printf("String num: %s\n Key: %s\n Email: %v", k.Num, k.Key, k.Email)
+		fmt.Printf("String num: %s\nKey: %s\nEmail: %v", k.Num, k.Key, k.Email)
 	}
 
 	key1 := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqF4hRYsFzO3ylja7wPxut+vu6y2VhYmfOz5wMHuP7XpUvoK/O6Red4bOUAPgexHzRw5kRAKYnaIoMPjNQYCSIhr5xNLwkZTWBxKQ48pLkuBC0yrm+ePXe8sjdFq/0ctPMYX2ZAKYUledoAeb/JbE+zPCEnzhUUqq9pkqGkJJ7I3Fp6uaRx+DELYggIHs6gqWgXLHGdaGkGPNs1xoG4EFwHOx51Jlp1IKAktRjooM9rqPV/TUkM02CoR0VncWbkgDja2lSywdFb8e8keFvbBSPYsB40VMSpXroRJjQ5eQyJlaVyuodXkKGuJmd/5lEZrtQQLISspAjYF2cFgJSsvzz mail1@example.com"
