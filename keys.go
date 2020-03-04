@@ -111,6 +111,12 @@ func AddKey(key string, uid string, rootUser string, host string, port string) {
 }
 
 func sync(keys []SSHKey, uid string, rootUser string, host string, port string) {
+
+	ch := make(chan []User)
+	go func(chan []User) {
+		ch <- GetUsers(rootUser, host, port)
+	}(ch)
+
 	f, err := os.Create("authorized_keys")
 	if err != nil {
 		log.Fatal("Cannot create file ", err)
@@ -147,8 +153,11 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 
 	defer f.Close()
 
-	usrs := GetUsers(rootUser, host, port)
+	//usrs := GetUsers(rootUser, host, port)
+
 	var homeDir string
+
+	usrs := <-ch
 
 	for _, h := range usrs {
 		if h.UID == uid {
