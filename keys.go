@@ -133,7 +133,6 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 		return
 	}
 
-	//Using SCP for copy authorized_keys to server (maybe replace in future)
 	clientConfig, _ := auth.PrivateKey(rootUser, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
 
 	client := scp.NewClient(host+":"+port, &clientConfig)
@@ -152,8 +151,6 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 	defer client.Close()
 
 	defer f.Close()
-
-	//usrs := GetUsers(rootUser, host, port)
 
 	var homeDir string
 
