@@ -1,6 +1,7 @@
 package sshkeymanager
 
 import (
+	"errors"
 	"fmt"
 	scp "github.com/bramvdbogaerde/go-scp"
 	"github.com/bramvdbogaerde/go-scp/auth"
@@ -16,13 +17,15 @@ type SSHKey struct {
 	Email string
 }
 
+var allUsers []User
+
 func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 	var (
 		sshKeys []SSHKey
 		user    User
 	)
-	users := GetUsers(rootUser, host, port)
-	for _, u := range users {
+	allUsers = GetUsers(rootUser, host, port)
+	for _, u := range allUsers {
 		if u.UID == uid {
 			user.Home = u.Home
 		}
@@ -58,64 +61,61 @@ func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 	return sshKeys
 }
 
-func DeleteKey(key string, uid string, rootUser string, host string, port string) {
+func DeleteKey(key string, uid string, rootUser string, host string, port string) error{
 	var (
 		newKeys []SSHKey
 		newKey  SSHKey
 	)
-
-	ch := make(chan []SSHKey)
-	go func(chan []SSHKey) {
-		ch <- GetKeys(uid, rootUser, host, port)
-	}(ch)
 
 	fields := strings.Fields(key)
 	newKey.Key = fields[0] + " " + fields[1]
 	if len(fields) > 2 {
 		newKey.Email = fields[2]
 	}
-	keys := <-ch
+	keys := GetKeys(uid, rootUser, host, port)
+
+	var keyExist bool
 	for _, k := range keys {
 		if k.Key != newKey.Key {
 			newKeys = append(newKeys, k)
+		} else {
+			keyExist = true
 		}
 	}
+	if !keyExist {
+		//log.Printf("%s\n Key is not exist!", newKey.Key)
+		return errors.New("Key is not exist")
+	}
 	sync(newKeys, uid, rootUser, host, port)
+	return nil
 }
 
-func AddKey(key string, uid string, rootUser string, host string, port string) {
+func AddKey(key string, uid string, rootUser string, host string, port string) error{
 
 	var k SSHKey
-
-	ch := make(chan []SSHKey)
-	go func(chan []SSHKey) {
-		ch <- GetKeys(uid, rootUser, host, port)
-	}(ch)
 
 	fields := strings.Fields(key)
 	k.Key = fields[0] + " " + fields[1]
 	if len(fields) > 2 {
 		k.Email = fields[2]
 	}
-	keys := <-ch
+	keys := GetKeys(uid, rootUser, host, port)
+
 	k.Num = len(keys) + 1
 	for _, ck := range keys {
 		if k.Key == ck.Key {
-			log.Printf("%s\n Key exist!", key)
-			return
+			//log.Printf("%s\n Key exist!", key)
+			return errors.New("Key exist!")
+
 		}
 	}
 
 	keys = append(keys, k)
 	sync(keys, uid, rootUser, host, port)
+	return nil
 }
 
 func sync(keys []SSHKey, uid string, rootUser string, host string, port string) {
-
-	ch := make(chan []User)
-	go func(chan []User) {
-		ch <- GetUsers(rootUser, host, port)
-	}(ch)
 
 	f, err := os.Create("authorized_keys")
 	if err != nil {
@@ -154,9 +154,7 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 
 	var homeDir string
 
-	usrs := <-ch
-
-	for _, h := range usrs {
+	for _, h := range allUsers {
 		if h.UID == uid {
 			homeDir = h.Home
 		}
