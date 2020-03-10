@@ -35,8 +35,14 @@ func main() {
         key2 := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCYI5i3jdeetGQ+qPSDUHGM8xt3hciswqARvquiWG9C6bFhdLHvhzTXB+qYmOrGDPZfd6cb8pT9AJ3G94+o1vTXCkbhOyT7I2DS5UfroQ1thgiFSv90jJNHWC2vhFVSdN1x14DpuCk1jlZTzeW0fZ2a6/vX3OUcLWmiGiT1AhDKgcvGH0j1NZYmYOZl+pd5WN7EAj/dZPjHQt72mUTPMfppKdl3yJS3WD2Lp0nMmL43buvMeoGRMZm8Fu8U36xuNX4GWf4dlTSh5nYs/A85mDGixrOvSu8F+vEv38A5Ua88mUxuAC9M102VxdgTN3exaUxTlz07JhZeCInxn+hQCkLj mail2@example.com"
 
 	
-	sshkeymanager.AddKey(key1, uid, rootUser, host, port)
-	sshkeymanager.DeleteKey(key2, uid, rootUser, host, port)
+	err := sshkeymanager.AddKey(key1, uid, rootUser, host, port)
+    if err != nil {
+        fmt.Println(err)
+    }   
+	err = sshkeymanager.DeleteKey(key2, uid, rootUser, host, port)
+    if err != nil {
+        fmt.Println(err)
+    }   
 
 }
 ```
