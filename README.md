@@ -36,13 +36,13 @@ func main() {
 
 	
 	err := sshkeymanager.AddKey(key1, uid, rootUser, host, port)
-    if err != nil {
-        fmt.Println(err)
-    }   
+	if err != nil {
+            fmt.Println(err)
+        }   
 	err = sshkeymanager.DeleteKey(key2, uid, rootUser, host, port)
-    if err != nil {
-        fmt.Println(err)
-    }   
+        if err != nil {
+            fmt.Println(err)
+        }   
 
 }
 ```
