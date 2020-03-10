@@ -19,7 +19,7 @@ type SSHKey struct {
 
 var allUsers []User
 
-func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
+func GetKeys(uid string, rootUser string, host string, port string) ([]SSHKey, error) {
 	var (
 		sshKeys []SSHKey
 		user    User
@@ -39,7 +39,7 @@ func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 	defer session.Close()
 	raw, err := session.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
 	if err != nil {
-		log.Fatal("Fail run command. Maybe \"/.ssh/authorized_keys\" not exist. ", err)
+		return nil, errors.New("Read error. Maybe \"~/.ssh/authorized_keys\" not exist.")
 	}
 	rawToString := string(raw)
 
@@ -58,7 +58,7 @@ func GetKeys(uid string, rootUser string, host string, port string) []SSHKey {
 		sshKeys = append(sshKeys, sshKey)
 	}
 
-	return sshKeys
+	return sshKeys, nil
 }
 
 func DeleteKey(key string, uid string, rootUser string, host string, port string) error{
@@ -72,7 +72,11 @@ func DeleteKey(key string, uid string, rootUser string, host string, port string
 	if len(fields) > 2 {
 		newKey.Email = fields[2]
 	}
-	keys := GetKeys(uid, rootUser, host, port)
+	keys, err := GetKeys(uid, rootUser, host, port)
+
+	if err != nil {
+		log.Println(err)
+	}
 
 	var keyExist bool
 	for _, k := range keys {
@@ -83,7 +87,6 @@ func DeleteKey(key string, uid string, rootUser string, host string, port string
 		}
 	}
 	if !keyExist {
-		//log.Printf("%s\n Key is not exist!", newKey.Key)
 		return errors.New("Key is not exist")
 	}
 	sync(newKeys, uid, rootUser, host, port)
@@ -99,12 +102,15 @@ func AddKey(key string, uid string, rootUser string, host string, port string) e
 	if len(fields) > 2 {
 		k.Email = fields[2]
 	}
-	keys := GetKeys(uid, rootUser, host, port)
+	keys, err := GetKeys(uid, rootUser, host, port)
+
+	if err != nil {
+		log.Println(err)
+	}
 
 	k.Num = len(keys) + 1
 	for _, ck := range keys {
 		if k.Key == ck.Key {
-			//log.Printf("%s\n Key exist!", key)
 			return errors.New("Key exist!")
 
 		}
@@ -165,5 +171,7 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 	if err != nil {
 		log.Fatal("Error while copying file ", err)
 	}
-	os.Remove("authorized_keys")
+	if err := os.Remove("authorized_keys"); err != nil {
+		log.Println("Cannot delete file, not exist")
+	}
 }
