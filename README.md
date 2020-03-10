@@ -18,7 +18,10 @@ func main() {
 	host := "server.name"
 	port := "22"
 	
-	users := sshkeymanager.GetUsers(rootUser, host, port)
+	users, err := sshkeymanager.GetUsers(rootUser, host, port)
+        if err != nil {
+            fmt.Println(err)
+        }   
 	
 	for _, u := range users {
 		fmt.Printf("UID: %v\nUsername: %v\nHome dir: %v\nShell: %v\n\n", u.UID, u.Name, u.Home, u.Shell)
