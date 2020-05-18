@@ -14,14 +14,8 @@ type User struct {
 
 var users []User
 
-func GetUsers(user string, host string, port string) []User {
-	client := ConfigSSH(user, host, port)
-	defer client.Close()
-	session, err := client.NewSession()
-	if err != nil {
-		log.Fatal("Unable to create session", err)
-	}
-	defer session.Close()
+func (c *Client) GetUsers(user string, host string, port string) []User {
+	session := c.Session
 	raw, err := session.CombinedOutput("cat /etc/passwd")
 	if err != nil {
 		log.Fatal("Unable to run command", err)

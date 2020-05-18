@@ -3,12 +3,13 @@ package sshkeymanager
 import (
 	"errors"
 	"fmt"
-	scp "github.com/bramvdbogaerde/go-scp"
-	"github.com/bramvdbogaerde/go-scp/auth"
 	"log"
 	"os"
 	"path"
 	"strings"
+
+	scp "github.com/bramvdbogaerde/go-scp"
+	"github.com/bramvdbogaerde/go-scp/auth"
 )
 
 type SSHKey struct {
@@ -19,25 +20,19 @@ type SSHKey struct {
 
 var allUsers []User
 
-func GetKeys(uid string, rootUser string, host string, port string) ([]SSHKey, error) {
+func (c *Client) GetKeys(uid string, rootUser string, host string, port string) ([]SSHKey, error) {
 	var (
 		sshKeys []SSHKey
 		user    User
 	)
-	allUsers = GetUsers(rootUser, host, port)
+	allUsers = c.GetUsers(rootUser, host, port)
 	for _, u := range allUsers {
 		if u.UID == uid {
 			user.Home = u.Home
 		}
 	}
-	client := ConfigSSH(rootUser, host, port)
-	defer client.Close()
-	session, err := client.NewSession()
-	if err != nil {
-		log.Fatal("Unable to create session ", err)
-	}
-	defer session.Close()
-	raw, err := session.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
+
+	raw, err := c.Session.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
 	if err != nil {
 		return nil, errors.New("Read error. Maybe \"~/.ssh/authorized_keys\" not exist.")
 	}
@@ -61,7 +56,7 @@ func GetKeys(uid string, rootUser string, host string, port string) ([]SSHKey, e
 	return sshKeys, nil
 }
 
-func DeleteKey(key string, uid string, rootUser string, host string, port string) error{
+func (c *Client) DeleteKey(key string, uid string, rootUser string, host string, port string) error {
 	var (
 		newKeys []SSHKey
 		newKey  SSHKey
@@ -72,7 +67,7 @@ func DeleteKey(key string, uid string, rootUser string, host string, port string
 	if len(fields) > 2 {
 		newKey.Email = fields[2]
 	}
-	keys, err := GetKeys(uid, rootUser, host, port)
+	keys, err := c.GetKeys(uid, rootUser, host, port)
 
 	if err != nil {
 		log.Println(err)
@@ -89,11 +84,10 @@ func DeleteKey(key string, uid string, rootUser string, host string, port string
 	if !keyExist {
 		return errors.New("Key is not exist")
 	}
-	sync(newKeys, uid, rootUser, host, port)
-	return nil
+	return c.sync(newKeys, uid, rootUser, host, port)
 }
 
-func AddKey(key string, uid string, rootUser string, host string, port string) error{
+func (c *Client) AddKey(key string, uid string, rootUser string, host string, port string) error {
 
 	var k SSHKey
 
@@ -102,7 +96,7 @@ func AddKey(key string, uid string, rootUser string, host string, port string) e
 	if len(fields) > 2 {
 		k.Email = fields[2]
 	}
-	keys, err := GetKeys(uid, rootUser, host, port)
+	keys, err := c.GetKeys(uid, rootUser, host, port)
 
 	if err != nil {
 		log.Println(err)
@@ -117,17 +111,16 @@ func AddKey(key string, uid string, rootUser string, host string, port string) e
 	}
 
 	keys = append(keys, k)
-	sync(keys, uid, rootUser, host, port)
-	return nil
+	return c.sync(keys, uid, rootUser, host, port)
 }
 
-func sync(keys []SSHKey, uid string, rootUser string, host string, port string) {
+func (c *Client) sync(keys []SSHKey, uid string, rootUser string, host string, port string) error {
 
 	f, err := os.Create("authorized_keys")
 	if err != nil {
 		log.Fatal("Cannot create file ", err)
 		f.Close()
-		return
+		return err
 	}
 
 	for _, k := range keys {
@@ -136,7 +129,7 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 	err = f.Close()
 	if err != nil {
 		log.Fatal("Cannot write to file", err)
-		return
+		return err
 	}
 
 	clientConfig, _ := auth.PrivateKey(rootUser, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
@@ -146,12 +139,13 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 	err = client.Connect()
 	if err != nil {
 		log.Fatal("Couldn't establish a connection to the remote server ", err)
-		return
+		return err
 	}
 
-	f, errFile := os.Open("authorized_keys")
-	if errFile != nil {
-		log.Fatal("Couldn't open file ", errFile)
+	f, err := os.Open("authorized_keys")
+	if err != nil {
+		log.Fatal("Couldn't open file ", err)
+		return err
 	}
 
 	defer client.Close()
@@ -170,8 +164,10 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 
 	if err != nil {
 		log.Fatal("Error while copying file ", err)
+		return err
 	}
 	if err := os.Remove("authorized_keys"); err != nil {
 		log.Println("Cannot delete file, not exist")
+		return err
 	}
 }
