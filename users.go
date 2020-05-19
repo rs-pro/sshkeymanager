@@ -1,7 +1,6 @@
 package sshkeymanager
 
 import (
-	"log"
 	"strings"
 )
 
@@ -14,17 +13,17 @@ type User struct {
 
 var users []User
 
-func GetUsers(user string, host string, port string) []User {
+func GetUsers(user string, host string, port string) ([]User, error) {
 	client := ConfigSSH(user, host, port)
 	defer client.Close()
 	session, err := client.NewSession()
 	if err != nil {
-		log.Fatal("Unable to create session", err)
+		return nil, err
 	}
 	defer session.Close()
 	raw, err := session.CombinedOutput("cat /etc/passwd")
 	if err != nil {
-		log.Fatal("Unable to run command", err)
+		return nil, err
 	}
 	rawToString := string(raw)
 
@@ -43,5 +42,5 @@ func GetUsers(user string, host string, port string) []User {
 		users = append(users, user)
 	}
 
-	return users
+	return users, nil
 }
