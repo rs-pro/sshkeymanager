@@ -49,7 +49,7 @@ func main() {
 		fmt.Println(err)
 	}
     
-    // Deleting key
+        // Deleting key
         err = sshkeymanager.DeleteKey(key2, uid, rootUser, host, port)
     	if err != nil {
     		fmt.Println(err)
