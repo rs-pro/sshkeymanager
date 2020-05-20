@@ -13,12 +13,12 @@ type SSHKey struct {
 
 var allUsers []User
 
-func GetKeys(uid string, c *IClient) ([]SSHKey, error) {
+func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 	var (
 		sshKeys []SSHKey
 		user    User
 	)
-	allUsers, err := GetUsers(c)
+	allUsers, err := c.GetUsers()
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func GetKeys(uid string, c *IClient) ([]SSHKey, error) {
 	return sshKeys, nil
 }
 
-func DeleteKey(key string, uid string, c *IClient) error{
+func (c *IClient) DeleteKey(key string, uid string) error{
 	var (
 		newKeys []SSHKey
 		newKey  SSHKey
@@ -73,7 +73,7 @@ func DeleteKey(key string, uid string, c *IClient) error{
 	if len(fields) > 2 {
 		newKey.Email = fields[2]
 	}
-	keys, err := GetKeys(uid, c)
+	keys, err := c.GetKeys(uid)
 
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func DeleteKey(key string, uid string, c *IClient) error{
 	return nil
 }
 
-func AddKey(key string, uid string, c *IClient) error{
+func (c *IClient) AddKey(key string, uid string) error{
 
 	var k SSHKey
 
@@ -106,7 +106,7 @@ func AddKey(key string, uid string, c *IClient) error{
 	if len(fields) > 2 {
 		k.Email = fields[2]
 	}
-	keys, err := GetKeys(uid, c)
+	keys, err := c.GetKeys(uid)
 
 	if err != nil {
 		return err

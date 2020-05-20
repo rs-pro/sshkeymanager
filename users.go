@@ -13,7 +13,7 @@ type User struct {
 
 var users []User
 
-func GetUsers(c *IClient) ([]User, error) {
+func (c *IClient) GetUsers() ([]User, error) {
 	//client, err := ConfigSSH(user, host, port)
 	//if err != nil {
 	//	return nil, err
