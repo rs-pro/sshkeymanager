@@ -13,18 +13,19 @@ type User struct {
 
 var users []User
 
-func GetUsers(user string, host string, port string) ([]User, error) {
-	client, err := ConfigSSH(user, host, port)
-	if err != nil {
-		return nil, err
-	}
-	defer client.Close()
-	session, err := client.NewSession()
-	if err != nil {
-		return nil, err
-	}
-	defer session.Close()
-	raw, err := session.CombinedOutput("cat /etc/passwd")
+func GetUsers(c *IClient) ([]User, error) {
+	//client, err := ConfigSSH(user, host, port)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//defer client.Close()
+	//session, err := client.NewSession()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//defer session.Close()
+	raw, err := c.Ses.CombinedOutput("cat /etc/passwd")
+	//raw, err := session.CombinedOutput("cat /etc/passwd")
 	if err != nil {
 		return nil, err
 	}
