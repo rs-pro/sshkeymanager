@@ -2,6 +2,12 @@ package sshkeymanager
 
 import (
 	"errors"
+	"fmt"
+	"github.com/bramvdbogaerde/go-scp"
+	"github.com/bramvdbogaerde/go-scp/auth"
+	"io/ioutil"
+	"os"
+	"path"
 	"strings"
 )
 
@@ -27,18 +33,8 @@ func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 			user.Home = u.Home
 		}
 	}
-	//client, err := ConfigSSH(rootUser, host, port)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer client.Close()
-	//session, err := client.NewSession()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer session.Close()
+
 	raw, err := c.Ses.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
-	//raw, err := session.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
 	if err != nil {
 		return nil, errors.New("Read error. Maybe \"~/.ssh/authorized_keys\" not exist. " + err.Error())
 	}
@@ -90,7 +86,7 @@ func (c *IClient) DeleteKey(key string, uid string) error{
 	if !keyExist {
 		return errors.New("Key is not exist")
 	}
-	//err = sync(newKeys, uid, c)
+	err = sync(newKeys, uid, c)
 	if err != nil {
 		return err
 	}
@@ -121,63 +117,63 @@ func (c *IClient) AddKey(key string, uid string) error{
 	}
 
 	keys = append(keys, k)
-	//err = sync(keys, uid, c)
+	err = sync(keys, uid, c)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-// Подумать о передаче сессии
-//func sync(keys []SSHKey, uid string, c *IClient) error {
-//
-//	tmpAuthorizedKeys, err := ioutil.TempFile("", "authorizedKeys")
-//	if err != nil {
-//		return err
-//	}
-//
-//	for _, k := range keys {
-//		fmt.Fprintln(tmpAuthorizedKeys, k.Key+" "+k.Email)
-//	}
-//	err = tmpAuthorizedKeys.Close()
-//	if err != nil {
-//		return err
-//	}
-//
-//	clientConfig, _ := auth.PrivateKey(rootUser, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
-//
-//	client := scp.NewClient(host+":"+port, &clientConfig)
-//
-//	err = client.Connect()
-//	if err != nil {
-//		return err
-//	}
-//
-//	f, err := os.Open(tmpAuthorizedKeys.Name())
-//	if err != nil {
-//		return err
-//	}
-//
-//	defer client.Close()
-//
-//	var homeDir string
-//
-//	for _, h := range allUsers {
-//		if h.UID == uid {
-//			homeDir = h.Home
-//		}
-//	}
-//
-//	err = client.CopyFile(f, path.Join(homeDir, "/.ssh/authorized_keys"), "0600")
-//
-//	if err != nil {
-//		return err
-//	}
-//	if err := os.Remove(tmpAuthorizedKeys.Name()); err != nil {
-//		return errors.New("Cannot delete file, not exist")
-//	}
-//	err = f.Close()
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
+
+func sync(keys []SSHKey, uid string, c *IClient) error {
+
+	tmpAuthorizedKeys, err := ioutil.TempFile("", "authorizedKeys")
+	if err != nil {
+		return err
+	}
+
+	for _, k := range keys {
+		fmt.Fprintln(tmpAuthorizedKeys, k.Key+" "+k.Email)
+	}
+	err = tmpAuthorizedKeys.Close()
+	if err != nil {
+		return err
+	}
+
+	clientConfig, _ := auth.PrivateKey(c.User, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
+
+	client := scp.NewClient(c.Host+":"+c.Port, &clientConfig)
+
+	err = client.Connect()
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Open(tmpAuthorizedKeys.Name())
+	if err != nil {
+		return err
+	}
+
+	defer client.Close()
+
+	var homeDir string
+
+	for _, h := range allUsers {
+		if h.UID == uid {
+			homeDir = h.Home
+		}
+	}
+
+	err = client.CopyFile(f, path.Join(homeDir, "/.ssh/authorized_keys"), "0600")
+
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(tmpAuthorizedKeys.Name()); err != nil {
+		return errors.New("Cannot delete file, not exist")
+	}
+	err = f.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}

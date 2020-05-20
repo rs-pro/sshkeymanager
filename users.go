@@ -14,18 +14,7 @@ type User struct {
 var users []User
 
 func (c *IClient) GetUsers() ([]User, error) {
-	//client, err := ConfigSSH(user, host, port)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer client.Close()
-	//session, err := client.NewSession()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer session.Close()
 	raw, err := c.Ses.CombinedOutput("cat /etc/passwd")
-	//raw, err := session.CombinedOutput("cat /etc/passwd")
 	if err != nil {
 		return nil, err
 	}
