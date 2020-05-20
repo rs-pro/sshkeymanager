@@ -5,7 +5,6 @@ import (
 	"golang.org/x/crypto/ssh"
 	kh "golang.org/x/crypto/ssh/knownhosts"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"time"
@@ -24,20 +23,20 @@ func DefaultKeyPath() string {
 	return ""
 }
 
-func ConfigSSH(user string, host string, port string) *ssh.Client {
+func ConfigSSH(user string, host string, port string) (*ssh.Client, error) {
 	key, err := ioutil.ReadFile(DefaultKeyPath())
 	if err != nil {
-		log.Fatal("Error reading private key", err)
+		return nil, err
 	}
 
 	signer, err := ssh.ParsePrivateKey(key)
 	if err != nil {
-		log.Fatal("Error parsing private key", err)
+		return nil, err
 	}
 
 	HostKeyCallback, err = kh.New(path.Join(Home, ".ssh/known_hosts"))
 	if err != nil {
-		log.Fatal("Could not create hostkeycallback function: ", err)
+		return nil, err
 	}
 
 	config := &ssh.ClientConfig{
@@ -52,8 +51,8 @@ func ConfigSSH(user string, host string, port string) *ssh.Client {
 	addr := fmt.Sprintf("%s:%s", host, port)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
-		log.Fatal("Could not dial to server", err)
+		return nil, err
 	}
 
-	return client
+	return client, nil
 }

@@ -6,7 +6,6 @@ import (
 	scp "github.com/bramvdbogaerde/go-scp"
 	"github.com/bramvdbogaerde/go-scp/auth"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -34,11 +33,14 @@ func GetKeys(uid string, rootUser string, host string, port string) ([]SSHKey, e
 			user.Home = u.Home
 		}
 	}
-	client := ConfigSSH(rootUser, host, port)
+	client, err := ConfigSSH(rootUser, host, port)
+	if err != nil {
+		return nil, err
+	}
 	defer client.Close()
 	session, err := client.NewSession()
 	if err != nil {
-		log.Fatal("Unable to create session ", err)
+		return nil, err
 	}
 	defer session.Close()
 	raw, err := session.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
@@ -79,7 +81,7 @@ func DeleteKey(key string, uid string, rootUser string, host string, port string
 	keys, err := GetKeys(uid, rootUser, host, port)
 
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 
 	var keyExist bool

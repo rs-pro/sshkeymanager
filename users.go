@@ -14,7 +14,10 @@ type User struct {
 var users []User
 
 func GetUsers(user string, host string, port string) ([]User, error) {
-	client := ConfigSSH(user, host, port)
+	client, err := ConfigSSH(user, host, port)
+	if err != nil {
+		return nil, err
+	}
 	defer client.Close()
 	session, err := client.NewSession()
 	if err != nil {
