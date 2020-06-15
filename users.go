@@ -14,6 +14,10 @@ type User struct {
 var users []User
 
 func (c *IClient) GetUsers() ([]User, error) {
+	if err := c.NewSession(); err != nil {
+		return nil, err
+	}
+	defer c.CloseSession()
 	raw, err := c.Ses.CombinedOutput("cat /etc/passwd")
 	if err != nil {
 		return nil, err

@@ -12,7 +12,7 @@ type IClient struct {
 	Port string
 }
 
-func (c *IClient) MakeSession(user string, host string, port string)  error {
+func (c *IClient) NewConnection(user string, host string, port string)  error {
 	c.User = user
 	c.Host = host
 	c.Port = port
@@ -21,6 +21,11 @@ func (c *IClient) MakeSession(user string, host string, port string)  error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c *IClient) NewSession()  error {
+	var err error
 	c.Ses, err = c.Cl.NewSession()
 	if err != nil {
 		return err
@@ -28,12 +33,16 @@ func (c *IClient) MakeSession(user string, host string, port string)  error {
 	return nil
 }
 
-func (c *IClient) Close() error {
-	err := c.Ses.Close()
+func (c *IClient) CloseConnection() error {
+	err := c.Cl.Close()
 	if err != nil {
 		return err
 	}
-	err = c.Cl.Close()
+	return nil
+}
+
+func (c *IClient) CloseSession() error {
+	err := c.Ses.Close()
 	if err != nil {
 		return err
 	}

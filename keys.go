@@ -24,7 +24,8 @@ func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 		sshKeys []SSHKey
 		user    User
 	)
-	allUsers, err := c.GetUsers()
+	var err error
+	allUsers, err = c.GetUsers()
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +35,10 @@ func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 		}
 	}
 
+	if err := c.NewSession(); err != nil {
+		return nil, err
+	}
+	defer c.CloseSession()
 	raw, err := c.Ses.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
 	if err != nil {
 		return nil, errors.New("Read error. Maybe \"~/.ssh/authorized_keys\" not exist. " + err.Error())
@@ -54,7 +59,9 @@ func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 		}
 		sshKeys = append(sshKeys, sshKey)
 	}
-
+	//if err := c.CloseSession(); err != nil {
+	//	return nil, err
+	//}
 	return sshKeys, nil
 }
 
