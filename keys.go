@@ -59,9 +59,6 @@ func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 		}
 		sshKeys = append(sshKeys, sshKey)
 	}
-	//if err := c.CloseSession(); err != nil {
-	//	return nil, err
-	//}
 	return sshKeys, nil
 }
 
