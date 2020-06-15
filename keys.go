@@ -3,7 +3,7 @@ package sshkeymanager
 import (
 	"errors"
 	"fmt"
-	scp "github.com/bramvdbogaerde/go-scp"
+	"github.com/bramvdbogaerde/go-scp"
 	"github.com/bramvdbogaerde/go-scp/auth"
 	"io/ioutil"
 	"os"
@@ -19,12 +19,13 @@ type SSHKey struct {
 
 var allUsers []User
 
-func GetKeys(uid string, rootUser string, host string, port string) ([]SSHKey, error) {
+func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 	var (
 		sshKeys []SSHKey
 		user    User
 	)
-	allUsers, err := GetUsers(rootUser, host, port)
+	var err error
+	allUsers, err = c.GetUsers()
 	if err != nil {
 		return nil, err
 	}
@@ -33,17 +34,12 @@ func GetKeys(uid string, rootUser string, host string, port string) ([]SSHKey, e
 			user.Home = u.Home
 		}
 	}
-	client, err := ConfigSSH(rootUser, host, port)
-	if err != nil {
+
+	if err := c.NewSession(); err != nil {
 		return nil, err
 	}
-	defer client.Close()
-	session, err := client.NewSession()
-	if err != nil {
-		return nil, err
-	}
-	defer session.Close()
-	raw, err := session.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
+	defer c.CloseSession()
+	raw, err := c.Ses.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
 	if err != nil {
 		return nil, errors.New("Read error. Maybe \"~/.ssh/authorized_keys\" not exist. " + err.Error())
 	}
@@ -63,11 +59,10 @@ func GetKeys(uid string, rootUser string, host string, port string) ([]SSHKey, e
 		}
 		sshKeys = append(sshKeys, sshKey)
 	}
-
 	return sshKeys, nil
 }
 
-func DeleteKey(key string, uid string, rootUser string, host string, port string) error{
+func (c *IClient) DeleteKey(key string, uid string) error{
 	var (
 		newKeys []SSHKey
 		newKey  SSHKey
@@ -78,7 +73,7 @@ func DeleteKey(key string, uid string, rootUser string, host string, port string
 	if len(fields) > 2 {
 		newKey.Email = fields[2]
 	}
-	keys, err := GetKeys(uid, rootUser, host, port)
+	keys, err := c.GetKeys(uid)
 
 	if err != nil {
 		return err
@@ -95,14 +90,14 @@ func DeleteKey(key string, uid string, rootUser string, host string, port string
 	if !keyExist {
 		return errors.New("Key is not exist")
 	}
-	err = sync(newKeys, uid, rootUser, host, port)
+	err = sync(newKeys, uid, c)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func AddKey(key string, uid string, rootUser string, host string, port string) error{
+func (c *IClient) AddKey(key string, uid string) error{
 
 	var k SSHKey
 
@@ -111,7 +106,7 @@ func AddKey(key string, uid string, rootUser string, host string, port string) e
 	if len(fields) > 2 {
 		k.Email = fields[2]
 	}
-	keys, err := GetKeys(uid, rootUser, host, port)
+	keys, err := c.GetKeys(uid)
 
 	if err != nil {
 		return err
@@ -126,14 +121,14 @@ func AddKey(key string, uid string, rootUser string, host string, port string) e
 	}
 
 	keys = append(keys, k)
-	err = sync(keys, uid, rootUser, host, port)
+	err = sync(keys, uid, c)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func sync(keys []SSHKey, uid string, rootUser string, host string, port string) error {
+func sync(keys []SSHKey, uid string, c *IClient) error {
 
 	tmpAuthorizedKeys, err := ioutil.TempFile("", "authorizedKeys")
 	if err != nil {
@@ -148,9 +143,9 @@ func sync(keys []SSHKey, uid string, rootUser string, host string, port string) 
 		return err
 	}
 
-	clientConfig, _ := auth.PrivateKey(rootUser, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
+	clientConfig, _ := auth.PrivateKey(c.User, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
 
-	client := scp.NewClient(host+":"+port, &clientConfig)
+	client := scp.NewClient(c.Host+":"+c.Port, &clientConfig)
 
 	err = client.Connect()
 	if err != nil {
