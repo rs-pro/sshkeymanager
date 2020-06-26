@@ -1,50 +1,68 @@
 package sshkeymanager
 
 import (
+	"io/ioutil"
+	"os"
+
 	"golang.org/x/crypto/ssh"
 )
 
-type IClient struct {
-	Cl *ssh.Client
-	Ses *ssh.Session
-	User string
-	Host string
-	Port string
+var DefaultConfig *ssh.ClientConfig
+
+func init() {
+	keys := []string{os.Getenv("HOME") + "/.ssh/id_rsa", os.Getenv("HOME") + "/.ssh/id_dsa"}
+
+	config := &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{},
+	}
+
+	//config.HostKeyCallback = ssh.FixedHostKey(hostKey)
+	if os.Getenv("INSECURE_IGNORE_HOST_KEY") == "YES" {
+		config.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+	}
+
+	for _, keyname := range keys {
+		key, err := ioutil.ReadFile(keyname)
+		if err == nil {
+			//signer, err := ssh.ParsePrivateKey(key)
+			signer, err := ssh.ParsePrivateKeyWithPassphrase(key, []byte(os.Getenv("KEY_PASS")))
+			if err != nil {
+				panic(err)
+			}
+			config.Auth = append(config.Auth, ssh.PublicKeys(signer))
+		}
+	}
+
+	DefaultConfig = config
 }
 
-func (c *IClient) NewConnection(user string, host string, port string)  error {
-	c.User = user
-	c.Host = host
-	c.Port = port
-	var err error
-	c.Cl, err = ConfigSSH(user, host, port)
-	if err != nil {
-		return err
-	}
-	return nil
+type Client struct {
+	*ssh.Client
 }
 
-func (c *IClient) NewSession()  error {
-	var err error
-	c.Ses, err = c.Cl.NewSession()
-	if err != nil {
-		return err
-	}
-	return nil
-}
+func makeConfig() *ssh.ClientConfig {
+	keys := []string{os.Getenv("HOME") + "/.ssh/id_rsa", os.Getenv("HOME") + "/.ssh/id_dsa"}
 
-func (c *IClient) CloseConnection() error {
-	err := c.Cl.Close()
-	if err != nil {
-		return err
+	config := &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{},
 	}
-	return nil
-}
 
-func (c *IClient) CloseSession() error {
-	err := c.Ses.Close()
-	if err != nil {
-		return err
+	//config.HostKeyCallback = ssh.FixedHostKey(hostKey)
+	config.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+
+	for _, keyname := range keys {
+		key, err := ioutil.ReadFile(keyname)
+		if err == nil {
+			//signer, err := ssh.ParsePrivateKey(key)
+			signer, err := ssh.ParsePrivateKeyWithPassphrase(key, []byte(os.Getenv("KEY_PASS")))
+			if err != nil {
+				panic(err)
+			}
+			config.Auth = append(config.Auth, ssh.PublicKeys(signer))
+		}
 	}
-	return nil
+
+	return config
 }
