@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/rs-pro/ssh-key-manager/pkg/api"
+	"github.com/rs-pro/sshkeymanager/api"
 )
 
 func main() {

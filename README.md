@@ -11,7 +11,7 @@ package main
 
 import (
 	"fmt"
-	sshkeymanager "github.com/rs-pro/sshkeymanager"
+	"github.com/rs-pro/sshkeymanager"
 	"log"
 	)
 

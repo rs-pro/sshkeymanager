@@ -3,12 +3,13 @@ package sshkeymanager
 import (
 	"errors"
 	"fmt"
-	"github.com/bramvdbogaerde/go-scp"
-	"github.com/bramvdbogaerde/go-scp/auth"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/bramvdbogaerde/go-scp"
+	"github.com/bramvdbogaerde/go-scp/auth"
 )
 
 type SSHKey struct {
@@ -17,9 +18,7 @@ type SSHKey struct {
 	Email string
 }
 
-var allUsers []User
-
-func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
+func (c *Client) GetKeys(uid string) ([]SSHKey, error) {
 	var (
 		sshKeys []SSHKey
 		user    User
@@ -62,7 +61,7 @@ func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 	return sshKeys, nil
 }
 
-func (c *IClient) DeleteKey(key string, uid string) error{
+func (c *Client) DeleteKey(key string, uid string) error {
 	var (
 		newKeys []SSHKey
 		newKey  SSHKey
@@ -97,7 +96,7 @@ func (c *IClient) DeleteKey(key string, uid string) error{
 	return nil
 }
 
-func (c *IClient) AddKey(key string, uid string) error{
+func (c *Client) AddKey(key string, uid string) error {
 
 	var k SSHKey
 
@@ -128,20 +127,18 @@ func (c *IClient) AddKey(key string, uid string) error{
 	return nil
 }
 
-func sync(keys []SSHKey, uid string, c *IClient) error {
 
-	tmpAuthorizedKeys, err := ioutil.TempFile("", "authorizedKeys")
-	if err != nil {
-		return err
-	}
 
-	for _, k := range keys {
-		fmt.Fprintln(tmpAuthorizedKeys, k.Key+" "+k.Email)
-	}
-	err = tmpAuthorizedKeys.Close()
-	if err != nil {
-		return err
-	}
+func (c *Client) WriteFile(path string, content []byte) error {
+
+}
+
+func (c *Client) WriteKeys(keys []SSHKey) {
+	keyFile := c.GenerateAuthorizedKeys(keys)
+	c.WriteFile()
+}
+
+func (c *Client) sync(keys []SSHKey, uid string, c *IClient) {
 
 	clientConfig, _ := auth.PrivateKey(c.User, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
 

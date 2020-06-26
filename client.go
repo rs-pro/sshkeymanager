@@ -1,68 +1,28 @@
 package sshkeymanager
 
 import (
-	"io/ioutil"
-	"os"
-
 	"golang.org/x/crypto/ssh"
 )
 
-var DefaultConfig *ssh.ClientConfig
-
-func init() {
-	keys := []string{os.Getenv("HOME") + "/.ssh/id_rsa", os.Getenv("HOME") + "/.ssh/id_dsa"}
-
-	config := &ssh.ClientConfig{
-		User: "root",
-		Auth: []ssh.AuthMethod{},
-	}
-
-	//config.HostKeyCallback = ssh.FixedHostKey(hostKey)
-	if os.Getenv("INSECURE_IGNORE_HOST_KEY") == "YES" {
-		config.HostKeyCallback = ssh.InsecureIgnoreHostKey()
-	}
-
-	for _, keyname := range keys {
-		key, err := ioutil.ReadFile(keyname)
-		if err == nil {
-			//signer, err := ssh.ParsePrivateKey(key)
-			signer, err := ssh.ParsePrivateKeyWithPassphrase(key, []byte(os.Getenv("KEY_PASS")))
-			if err != nil {
-				panic(err)
-			}
-			config.Auth = append(config.Auth, ssh.PublicKeys(signer))
-		}
-	}
-
-	DefaultConfig = config
-}
-
 type Client struct {
-	*ssh.Client
+	host       string
+	port       string
+	SSHConfig  *ssh.ClientConfig
+	SSHClient  *ssh.Client
+	SSHSession *ssh.Session
 }
 
-func makeConfig() *ssh.ClientConfig {
-	keys := []string{os.Getenv("HOME") + "/.ssh/id_rsa", os.Getenv("HOME") + "/.ssh/id_dsa"}
+// GetPort returns client's ssh user
+func (c *Client) GetUser() string {
+	return c.SSHConfig.User
+}
 
-	config := &ssh.ClientConfig{
-		User: "root",
-		Auth: []ssh.AuthMethod{},
-	}
+// GetPort returns client's ssh host
+func (c *Client) GetHost() string {
+	return c.host
+}
 
-	//config.HostKeyCallback = ssh.FixedHostKey(hostKey)
-	config.HostKeyCallback = ssh.InsecureIgnoreHostKey()
-
-	for _, keyname := range keys {
-		key, err := ioutil.ReadFile(keyname)
-		if err == nil {
-			//signer, err := ssh.ParsePrivateKey(key)
-			signer, err := ssh.ParsePrivateKeyWithPassphrase(key, []byte(os.Getenv("KEY_PASS")))
-			if err != nil {
-				panic(err)
-			}
-			config.Auth = append(config.Auth, ssh.PublicKeys(signer))
-		}
-	}
-
-	return config
+// GetPort returns client's ssh port
+func (c *Client) GetPort() string {
+	return c.host
 }
