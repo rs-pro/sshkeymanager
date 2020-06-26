@@ -22,11 +22,11 @@ func NewClient(host, port string, config *ssh.ClientConfig) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return client, nil
+	return &client, nil
 }
 
 func (c *Client) Execute(command string) (string, error) {
-	session, err := client.NewSession()
+	session, err := c.SSHClient.NewSession()
 	if err != nil {
 		return "", errors.Wrap(err, "ssh NewSession")
 	}

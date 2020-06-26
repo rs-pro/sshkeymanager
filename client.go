@@ -1,6 +1,7 @@
 package sshkeymanager
 
 import (
+	"github.com/rs-pro/sshkeymanager/passwd"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -10,6 +11,7 @@ type Client struct {
 	SSHConfig  *ssh.ClientConfig
 	SSHClient  *ssh.Client
 	SSHSession *ssh.Session
+	UsersCache *[]passwd.User
 }
 
 // GetPort returns client's ssh user

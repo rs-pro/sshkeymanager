@@ -7,7 +7,7 @@ import (
 )
 
 type Server struct {
-	Command *exec.Command
+	Command *exec.Cmd
 }
 
 func Start() *Server {
@@ -18,7 +18,7 @@ func Start() *Server {
 	if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
 	}
-	return Server{Command: cmd}
+	return &Server{Command: cmd}
 }
 
 func (s *Server) Stop() {

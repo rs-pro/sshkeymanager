@@ -11,6 +11,7 @@ type User struct {
 	Name  string
 	Home  string
 	Shell string
+	Desc string
 }
 
 func Parse(raw string) ([]User, error) {
@@ -26,6 +27,8 @@ func Parse(raw string) ([]User, error) {
 		var user User
 		user.Name = u[0]
 		user.UID = u[2]
+		user.GID = u[3]
+		user.Desc = u[4]
 		user.Home = u[5]
 		user.Shell = u[6]
 		users = append(users, user)
@@ -34,6 +37,6 @@ func Parse(raw string) ([]User, error) {
 	return users, nil
 }
 
-func (u User) AuthorizedKeys() string {
+func (u *User) AuthorizedKeys() string {
 	return u.Home + "/.ssh/authorized_keys"
 }

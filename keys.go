@@ -1,11 +1,20 @@
 package sshkeymanager
 
 import (
-	"errors"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
+
+	"github.com/rs-pro/sshkeymanager/authorized_keys"
+	"github.com/rs-pro/sshkeymanager/passwd"
 )
 
-func (c *Client) GetKeys(user User) ([]SSHKey, error) {
+func (c *Client) GetKeys(user passwd.User) ([]authorized_keys.SSHKey, error) {
 	raw, err := c.Execute("cat " + user.AuthorizedKeys())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read "+user.AuthorizedKeys())
@@ -13,10 +22,10 @@ func (c *Client) GetKeys(user User) ([]SSHKey, error) {
 	return authorized_keys.Parse(raw)
 }
 
-func (c *Client) DeleteKey(key string, uid string) error {
+func (c *Client) DeleteKey(user passwd.User, key string) error {
 	var (
-		newKeys []SSHKey
-		newKey  SSHKey
+		newKeys []authorized_keys.SSHKey
+		newKey  authorized_keys.SSHKey
 	)
 
 	fields := strings.Fields(key)
@@ -24,8 +33,8 @@ func (c *Client) DeleteKey(key string, uid string) error {
 	if len(fields) > 2 {
 		newKey.Email = fields[2]
 	}
-	keys, err := c.GetKeys(uid)
 
+	keys, err := c.GetKeys(user)
 	if err != nil {
 		return err
 	}
@@ -38,56 +47,49 @@ func (c *Client) DeleteKey(key string, uid string) error {
 			keyExist = true
 		}
 	}
+
 	if !keyExist {
-		return errors.New("Key is not exist")
+		return errors.New("Key to delete not found in authorized_keys")
 	}
-	err = sync(newKeys, uid, c)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return c.WriteKeys(user, newKeys)
 }
 
-func (c *Client) AddKey(key string, uid string) error {
-	var k SSHKey
+func (c *Client) AddKey(user passwd.User, key string) error {
+	var k authorized_keys.SSHKey
 
 	fields := strings.Fields(key)
 	k.Key = fields[0] + " " + fields[1]
 	if len(fields) > 2 {
 		k.Email = fields[2]
 	}
-	keys, err := c.GetKeys(uid)
+	keys, err := c.GetKeys(user)
 
 	if err != nil {
 		return err
 	}
 
-	k.Num = len(keys) + 1
 	for _, ck := range keys {
 		if k.Key == ck.Key {
-			return errors.New("Key exist!")
-
+			return errors.New("Key already present in authorized_keys")
 		}
 	}
 
-	keys = append(keys, k)
-	err = sync(keys, uid, c)
+	return c.WriteKeys(user, append(keys, k))
+}
+
+func (c *Client) StartSCP(session *ssh.Session) error {
+	err := session.Run("/usr/bin/scp -tr /")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to run")
 	}
 	return nil
 }
 
-func (c *Client) StartSCP() error {
-	if err := session.Run("/usr/bin/scp -tr /"); err != nil {
-		panic("Failed to run: " + err.Error())
-	}
-}
-
 func (c *Client) WriteFile(path string, content []byte) error {
-	session, err := client.NewSession()
+	session, err := c.SSHClient.NewSession()
 	if err != nil {
-		return "", errors.Wrap(err, "ssh NewSession")
+		return errors.Wrap(err, "ssh NewSession")
 	}
 	defer session.Close()
 	go func() {
@@ -97,10 +99,19 @@ func (c *Client) WriteFile(path string, content []byte) error {
 		fmt.Fprintln(w, "C0600", len(content), filepath.Base(path))
 		fmt.Fprint(w, content)
 		fmt.Fprint(w, "\x00")
+
+		r, _ := session.StdoutPipe()
+		data, err := ioutil.ReadAll(r)
+		log.Println("scp response", data, err)
+		defer w.Close()
+		session.Close()
 	}()
+
+	c.StartSCP(session)
+	return nil
 }
 
-func (c *Client) WriteKeys(user User, keys []SSHKey) {
+func (c *Client) WriteKeys(user passwd.User, keys []authorized_keys.SSHKey) error {
 	keyFile := authorized_keys.Generate(keys)
-	c.WriteFile(user.AuthorizedKeys(), keyFile)
+	return c.WriteFile(user.AuthorizedKeys(), keyFile)
 }

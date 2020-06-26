@@ -4,16 +4,18 @@ import (
 	"log"
 	"os"
 	"testing"
+
+	"github.com/rs-pro/sshkeymanager/testserver"
 )
 
 func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	log.Println("start test ssh server")
-	testserver.Start()
+	server := testserver.Start()
 	log.Println("started test ssh server")
 	result := m.Run()
-	testserver.Stop()
-	os.Exit()
+	server.Stop()
+	os.Exit(result)
 }
 
 func TestListUsers(t *testing.T) {
@@ -24,6 +26,4 @@ func TestListUsers(t *testing.T) {
 	if err != nil {
 		log.Println(err)
 	}
-
-	testserver.Stop()
 }
