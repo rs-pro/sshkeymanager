@@ -2,63 +2,15 @@ package sshkeymanager
 
 import (
 	"errors"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
 	"strings"
-
-	"github.com/bramvdbogaerde/go-scp"
-	"github.com/bramvdbogaerde/go-scp/auth"
 )
 
-type SSHKey struct {
-	Num   int
-	Key   string
-	Email string
-}
-
-func (c *Client) GetKeys(uid string) ([]SSHKey, error) {
-	var (
-		sshKeys []SSHKey
-		user    User
-	)
-	var err error
-	allUsers, err = c.GetUsers()
+func (c *Client) GetKeys(user User) ([]SSHKey, error) {
+	raw, err := c.Execute("cat " + user.AuthorizedKeys())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to read "+user.AuthorizedKeys())
 	}
-	for _, u := range allUsers {
-		if u.UID == uid {
-			user.Home = u.Home
-		}
-	}
-
-	if err := c.NewSession(); err != nil {
-		return nil, err
-	}
-	defer c.CloseSession()
-	raw, err := c.Ses.CombinedOutput("cat " + user.Home + "/.ssh/authorized_keys")
-	if err != nil {
-		return nil, errors.New("Read error. Maybe \"~/.ssh/authorized_keys\" not exist. " + err.Error())
-	}
-	rawToString := string(raw)
-
-	keysStrings := strings.Split(rawToString, "\n")
-	for i, s := range keysStrings {
-		if len(s) == 0 {
-			continue
-		}
-		k := strings.Fields(s)
-		var sshKey SSHKey
-		sshKey.Num = i + 1
-		sshKey.Key = k[0] + " " + k[1]
-		if len(k) > 2 {
-			sshKey.Email = k[2]
-		}
-		sshKeys = append(sshKeys, sshKey)
-	}
-	return sshKeys, nil
+	return authorized_keys.Parse(raw)
 }
 
 func (c *Client) DeleteKey(key string, uid string) error {
@@ -97,7 +49,6 @@ func (c *Client) DeleteKey(key string, uid string) error {
 }
 
 func (c *Client) AddKey(key string, uid string) error {
-
 	var k SSHKey
 
 	fields := strings.Fields(key)
@@ -127,54 +78,29 @@ func (c *Client) AddKey(key string, uid string) error {
 	return nil
 }
 
-
+func (c *Client) StartSCP() error {
+	if err := session.Run("/usr/bin/scp -tr /"); err != nil {
+		panic("Failed to run: " + err.Error())
+	}
+}
 
 func (c *Client) WriteFile(path string, content []byte) error {
-
+	session, err := client.NewSession()
+	if err != nil {
+		return "", errors.Wrap(err, "ssh NewSession")
+	}
+	defer session.Close()
+	go func() {
+		w, _ := session.StdinPipe()
+		defer w.Close()
+		fmt.Fprintln(w, "D0700", 0, filepath.Dir(path))
+		fmt.Fprintln(w, "C0600", len(content), filepath.Base(path))
+		fmt.Fprint(w, content)
+		fmt.Fprint(w, "\x00")
+	}()
 }
 
-func (c *Client) WriteKeys(keys []SSHKey) {
-	keyFile := c.GenerateAuthorizedKeys(keys)
-	c.WriteFile()
-}
-
-func (c *Client) sync(keys []SSHKey, uid string, c *IClient) {
-
-	clientConfig, _ := auth.PrivateKey(c.User, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
-
-	client := scp.NewClient(c.Host+":"+c.Port, &clientConfig)
-
-	err = client.Connect()
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Open(tmpAuthorizedKeys.Name())
-	if err != nil {
-		return err
-	}
-
-	defer client.Close()
-
-	var homeDir string
-
-	for _, h := range allUsers {
-		if h.UID == uid {
-			homeDir = h.Home
-		}
-	}
-
-	err = client.CopyFile(f, path.Join(homeDir, "/.ssh/authorized_keys"), "0600")
-
-	if err != nil {
-		return err
-	}
-	if err := os.Remove(tmpAuthorizedKeys.Name()); err != nil {
-		return errors.New("Cannot delete file, not exist")
-	}
-	err = f.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+func (c *Client) WriteKeys(user User, keys []SSHKey) {
+	keyFile := authorized_keys.Generate(keys)
+	c.WriteFile(user.AuthorizedKeys(), keyFile)
 }

@@ -2,12 +2,10 @@ package main
 
 import (
 	"log"
-	"math/rand"
 	"os"
-	"strconv"
 
-	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/dustin/go-humanize"
+	"github.com/olekukonko/tablewriter"
+	"github.com/rs-pro/sshkeymanager"
 	"github.com/urfave/cli/v2"
 )
 
@@ -63,7 +61,7 @@ func main() {
 					})
 				}
 				table.Render()
-			}
+			},
 		},
 		{
 			Name:  "add-user",
@@ -112,4 +110,3 @@ func main() {
 		log.Fatal(err)
 	}
 }
-

@@ -1,6 +1,9 @@
 package passwd
 
-import "strings"
+import (
+	"log"
+	"strings"
+)
 
 type User struct {
 	UID   string
@@ -13,9 +16,11 @@ type User struct {
 func Parse(raw string) ([]User, error) {
 	strs := strings.Split(raw, "\n")
 
+	users := make([]User, 0)
 	for _, s := range strs {
 		u := strings.Split(s, ":")
-		if len(s) == 0 {
+		if len(s) < 6 {
+			log.Println("bad /etc/passwd entry:", s)
 			continue
 		}
 		var user User
@@ -27,4 +32,8 @@ func Parse(raw string) ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func (u User) AuthorizedKeys() string {
+	return u.Home + "/.ssh/authorized_keys"
 }
