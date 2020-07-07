@@ -13,7 +13,12 @@ func GetRouter() *gin.Engine {
 		r := gin.Default()
 		r.Use(CheckApiKey())
 
-		r.GET("/:host/:port/users", func(c *gin.Context) {
+		r.GET("/robots.txt", func(c *gin.Context) {
+			c.Writer.WriteHeader(http.StatusOK)
+			c.Writer.Write([]byte("User-agent: *\nDisallow: /"))
+		}
+
+		r.POST("/:host/:port/users", func(c *gin.Context) {
 			host := c.Param("host")
 			port := c.Param("port")
 			client := sshkeymanager.NewClient(host, port, sshkeymanager.DefaultConfig)
@@ -27,5 +32,6 @@ func GetRouter() *gin.Engine {
 			spew.Dump(client)
 		})
 	}
+
 	return r
 }
