@@ -7,15 +7,9 @@ import (
 type IClient struct {
 	Cl *ssh.Client
 	Ses *ssh.Session
-	User string
-	Host string
-	Port string
 }
 
 func (c *IClient) NewConnection(user string, host string, port string)  error {
-	c.User = user
-	c.Host = host
-	c.Port = port
 	var err error
 	c.Cl, err = ConfigSSH(user, host, port)
 	if err != nil {
