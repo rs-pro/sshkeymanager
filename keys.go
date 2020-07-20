@@ -140,10 +140,6 @@ func sync(keys []SSHKey, uid string, c *IClient) error {
 		return err
 	}
 	defer client.Close()
-	err = client.Remove(path.Join(homeDir, "/.ssh/authorized_keys"))
-	if err != nil {
-		return err
-	}
 	authorized_keys, err := client.Create(path.Join(homeDir, "/.ssh/authorized_keys"))
 	if err != nil {
 		return err
