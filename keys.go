@@ -2,12 +2,9 @@ package sshkeymanager
 
 import (
 	"errors"
-	"fmt"
-	"github.com/bramvdbogaerde/go-scp"
-	"github.com/bramvdbogaerde/go-scp/auth"
-	"io/ioutil"
-	"os"
+	"github.com/pkg/sftp"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -62,7 +59,7 @@ func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 	return sshKeys, nil
 }
 
-func (c *IClient) DeleteKey(key string, uid string) error{
+func (c *IClient) DeleteKey(key string, uid string) error {
 	var (
 		newKeys []SSHKey
 		newKey  SSHKey
@@ -97,7 +94,7 @@ func (c *IClient) DeleteKey(key string, uid string) error{
 	return nil
 }
 
-func (c *IClient) AddKey(key string, uid string) error{
+func (c *IClient) AddKey(key string, uid string) error {
 
 	var k SSHKey
 
@@ -130,35 +127,6 @@ func (c *IClient) AddKey(key string, uid string) error{
 
 func sync(keys []SSHKey, uid string, c *IClient) error {
 
-	tmpAuthorizedKeys, err := ioutil.TempFile("", "authorizedKeys")
-	if err != nil {
-		return err
-	}
-
-	for _, k := range keys {
-		fmt.Fprintln(tmpAuthorizedKeys, k.Key+" "+k.Email)
-	}
-	err = tmpAuthorizedKeys.Close()
-	if err != nil {
-		return err
-	}
-
-	clientConfig, _ := auth.PrivateKey(c.User, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
-
-	client := scp.NewClient(c.Host+":"+c.Port, &clientConfig)
-
-	err = client.Connect()
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Open(tmpAuthorizedKeys.Name())
-	if err != nil {
-		return err
-	}
-
-	defer client.Close()
-
 	var homeDir string
 
 	for _, h := range allUsers {
@@ -167,17 +135,30 @@ func sync(keys []SSHKey, uid string, c *IClient) error {
 		}
 	}
 
-	err = client.CopyFile(f, path.Join(homeDir, "/.ssh/authorized_keys"), "0600")
+	client, err := sftp.NewClient(c.Cl)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+	authorized_keys, err := client.Create(path.Join(homeDir, "/.ssh/authorized_keys"))
+	if err != nil {
+		return err
+	}
+	defer authorized_keys.Close()
+	uidInt, err := strconv.Atoi(uid)
+	if err != nil {
+		return err
+	}
+	err = authorized_keys.Chown(uidInt, uidInt)
+	if err != nil {
+		return err
+	}
+	err = authorized_keys.Chmod(0600)
+	for _, k := range keys {
+		if _, err := authorized_keys.Write([]byte(k.Key + " " + k.Email + "\n")); err != nil {
+			return err
+		}
+	}
 
-	if err != nil {
-		return err
-	}
-	if err := os.Remove(tmpAuthorizedKeys.Name()); err != nil {
-		return errors.New("Cannot delete file, not exist")
-	}
-	err = f.Close()
-	if err != nil {
-		return err
-	}
 	return nil
 }
