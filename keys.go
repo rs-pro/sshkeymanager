@@ -3,11 +3,10 @@ package sshkeymanager
 import (
 	"errors"
 	"fmt"
-	"github.com/bramvdbogaerde/go-scp"
-	"github.com/bramvdbogaerde/go-scp/auth"
+	"github.com/pkg/sftp"
 	"io/ioutil"
-	"os"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -129,7 +128,7 @@ func (c *IClient) AddKey(key string, uid string) error{
 }
 
 func sync(keys []SSHKey, uid string, c *IClient) error {
-
+    // TMPFILE STUFF
 	tmpAuthorizedKeys, err := ioutil.TempFile("", "authorizedKeys")
 	if err != nil {
 		return err
@@ -139,25 +138,7 @@ func sync(keys []SSHKey, uid string, c *IClient) error {
 		fmt.Fprintln(tmpAuthorizedKeys, k.Key+" "+k.Email)
 	}
 	err = tmpAuthorizedKeys.Close()
-	if err != nil {
-		return err
-	}
-
-	clientConfig, _ := auth.PrivateKey(c.User, path.Join(Home, ".ssh/id_rsa"), HostKeyCallback)
-
-	client := scp.NewClient(c.Host+":"+c.Port, &clientConfig)
-
-	err = client.Connect()
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Open(tmpAuthorizedKeys.Name())
-	if err != nil {
-		return err
-	}
-
-	defer client.Close()
+	// END TMPFILE STUFF
 
 	var homeDir string
 
@@ -167,17 +148,42 @@ func sync(keys []SSHKey, uid string, c *IClient) error {
 		}
 	}
 
-	err = client.CopyFile(f, path.Join(homeDir, "/.ssh/authorized_keys"), "0600")
+	// SFTP STUFF
+	client, err := sftp.NewClient(c.Cl)
 
 	if err != nil {
 		return err
 	}
-	if err := os.Remove(tmpAuthorizedKeys.Name()); err != nil {
-		return errors.New("Cannot delete file, not exist")
-	}
-	err = f.Close()
+
+	defer client.Close()
+
+	err = client.Remove(path.Join(homeDir, "/.ssh/authorized_keys"))
 	if err != nil {
 		return err
 	}
+	authorized_keys, err := client.Create(path.Join(homeDir, "/.ssh/authorized_keys"))
+	if err != nil {
+		return err
+	}
+	defer authorized_keys.Close()
+	uidInt, err := strconv.Atoi(uid)
+	if err != nil {
+		return err
+	}
+	err = authorized_keys.Chown(uidInt, uidInt)
+	if err != nil {
+		return err
+	}
+	err = authorized_keys.Chmod(0600)
+	data, err := ioutil.ReadFile(tmpAuthorizedKeys.Name())
+	if err != nil {
+		return err
+	}
+	if _, err = authorized_keys.Write(data); err != nil {
+		return err
+	}
+
+    // END SFTP STUFF
+
 	return nil
 }
