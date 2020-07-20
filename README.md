@@ -15,13 +15,14 @@ import (
 	)
 
 func main() {
-        rootUser := "root"
-    	host := "host.name"
-    	port := "22"
-    
-    	c := sshkeymanager.IClient{}
+
+        c := sshkeymanager.Client{
+        	User: "root",
+        	Host: "host.name",
+        	Port: "22",
+        }
     	// Create new connection
-    	err := c.NewConnection(rootUser, host, port)
+    	err := c.NewConnection()
     	if err != nil {
     		log.Println(err)
     	}

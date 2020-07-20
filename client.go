@@ -4,21 +4,24 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-type IClient struct {
+type Client struct {
 	Cl *ssh.Client
 	Ses *ssh.Session
+	User string
+	Host string
+	Port string
 }
 
-func (c *IClient) NewConnection(user string, host string, port string)  error {
+func (c *Client) NewConnection()  error {
 	var err error
-	c.Cl, err = ConfigSSH(user, host, port)
+	err = c.configSSH()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *IClient) NewSession()  error {
+func (c *Client) NewSession()  error {
 	var err error
 	c.Ses, err = c.Cl.NewSession()
 	if err != nil {
@@ -27,7 +30,7 @@ func (c *IClient) NewSession()  error {
 	return nil
 }
 
-func (c *IClient) CloseConnection() error {
+func (c *Client) CloseConnection() error {
 	err := c.Cl.Close()
 	if err != nil {
 		return err
@@ -35,7 +38,7 @@ func (c *IClient) CloseConnection() error {
 	return nil
 }
 
-func (c *IClient) CloseSession() error {
+func (c *Client) CloseSession() error {
 	err := c.Ses.Close()
 	if err != nil {
 		return err

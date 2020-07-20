@@ -16,7 +16,7 @@ type SSHKey struct {
 
 var allUsers []User
 
-func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
+func (c *Client) GetKeys(uid string) ([]SSHKey, error) {
 	var (
 		sshKeys []SSHKey
 		user    User
@@ -59,7 +59,7 @@ func (c *IClient) GetKeys(uid string) ([]SSHKey, error) {
 	return sshKeys, nil
 }
 
-func (c *IClient) DeleteKey(key string, uid string) error {
+func (c *Client) DeleteKey(key string, uid string) error {
 	var (
 		newKeys []SSHKey
 		newKey  SSHKey
@@ -87,14 +87,14 @@ func (c *IClient) DeleteKey(key string, uid string) error {
 	if !keyExist {
 		return errors.New("Key is not exist")
 	}
-	err = sync(newKeys, uid, c)
+	err = c.sync(newKeys, uid)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *IClient) AddKey(key string, uid string) error {
+func (c *Client) AddKey(key string, uid string) error {
 
 	var k SSHKey
 
@@ -118,14 +118,14 @@ func (c *IClient) AddKey(key string, uid string) error {
 	}
 
 	keys = append(keys, k)
-	err = sync(keys, uid, c)
+	err = c.sync(keys, uid)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func sync(keys []SSHKey, uid string, c *IClient) error {
+func (c *Client) sync(keys []SSHKey, uid string) error {
 
 	var homeDir string
 
@@ -140,22 +140,22 @@ func sync(keys []SSHKey, uid string, c *IClient) error {
 		return err
 	}
 	defer client.Close()
-	authorized_keys, err := client.Create(path.Join(homeDir, "/.ssh/authorized_keys"))
+	authorizedKeys, err := client.Create(path.Join(homeDir, "/.ssh/authorized_keys"))
 	if err != nil {
 		return err
 	}
-	defer authorized_keys.Close()
+	defer authorizedKeys.Close()
 	uidInt, err := strconv.Atoi(uid)
 	if err != nil {
 		return err
 	}
-	err = authorized_keys.Chown(uidInt, uidInt)
+	err = authorizedKeys.Chown(uidInt, uidInt)
 	if err != nil {
 		return err
 	}
-	err = authorized_keys.Chmod(0600)
+	err = authorizedKeys.Chmod(0600)
 	for _, k := range keys {
-		if _, err := authorized_keys.Write([]byte(k.Key + " " + k.Email + "\n")); err != nil {
+		if _, err := authorizedKeys.Write([]byte(k.Key + " " + k.Email + "\n")); err != nil {
 			return err
 		}
 	}

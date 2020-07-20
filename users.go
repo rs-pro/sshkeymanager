@@ -13,7 +13,7 @@ type User struct {
 
 var users []User
 
-func (c *IClient) GetUsers() ([]User, error) {
+func (c *Client) GetUsers() ([]User, error) {
 	if err := c.NewSession(); err != nil {
 		return nil, err
 	}

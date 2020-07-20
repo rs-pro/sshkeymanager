@@ -15,7 +15,7 @@ var (
 	HostKeyCallback ssh.HostKeyCallback
 )
 
-func DefaultKeyPath() string {
+func defaultKeyPath() string {
 	Home = os.Getenv("HOME")
 	if len(Home) > 0 {
 		return path.Join(Home, ".ssh/id_rsa")
@@ -23,24 +23,24 @@ func DefaultKeyPath() string {
 	return ""
 }
 
-func ConfigSSH(user string, host string, port string) (*ssh.Client, error) {
-	key, err := ioutil.ReadFile(DefaultKeyPath())
+func (c *Client) configSSH() error {
+	key, err := ioutil.ReadFile(defaultKeyPath())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	signer, err := ssh.ParsePrivateKey(key)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	HostKeyCallback, err = kh.New(path.Join(Home, ".ssh/known_hosts"))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	config := &ssh.ClientConfig{
-		User: user,
+		User: c.User,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},
@@ -48,11 +48,11 @@ func ConfigSSH(user string, host string, port string) (*ssh.Client, error) {
 		Timeout:         10 * time.Second,
 	}
 
-	addr := fmt.Sprintf("%s:%s", host, port)
-	client, err := ssh.Dial("tcp", addr, config)
+	addr := fmt.Sprintf("%s:%s", c.Host, c.Port)
+	c.Cl, err = ssh.Dial("tcp", addr, config)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return client, nil
+	return nil
 }
