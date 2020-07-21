@@ -1,7 +1,7 @@
 package sshkeymanager
 
 import (
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
 	"testing"
@@ -44,13 +44,12 @@ func TestListUsers(t *testing.T) {
 		log.Println(err)
 	}
 	assert.NotEqual(t, len(users), 0)
-	for _, u := range users {
-		if u.UID == "1000" {
-			assert.Equal(t, u.UID, "1000")
-			assert.Equal(t, u.GID, "1000")
-			assert.Equal(t, u.Name, "test")
-			assert.Equal(t, u.Home, "/config")
-			assert.Equal(t, u.Shell, "/bin/bash")
-		}
-	}
+		u := users[len(users)-1]
+		assert.Equal(t, "1000", u.UID, "UID should be 1000")
+		assert.Equal(t, "1000", u.GID, "UID should be 1000")
+		assert.Equal(t, "test", u.Name, "Name should be test")
+		assert.Equal(t, "/config", u.Home, "Home should be /config")
+		assert.Equal(t, "/bin/bash", u.Shell, "Shell should be /bin/bash")
 }
+
+
