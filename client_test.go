@@ -43,7 +43,7 @@ func TestListUsers(t *testing.T) {
 	if err != nil {
 		log.Println(err)
 	}
-	assert.NotEqual(t, len(users), 0)
+	assert.NotEqual(t, 0, len(users))
 		u := users[len(users)-1]
 		assert.Equal(t, "1000", u.UID, "UID should be 1000")
 		assert.Equal(t, "1000", u.GID, "UID should be 1000")
