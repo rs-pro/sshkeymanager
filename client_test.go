@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/rs-pro/sshkeymanager/testserver"
 
@@ -27,9 +28,16 @@ func TestListUsers(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	var counter int
+	THIS:
 	client, err := NewClient(host, port, clientCfg)
 	if err != nil {
-		fmt.Println(err)
+		time.Sleep(time.Second)
+		counter += 1
+		if counter >= 10 {
+			log.Fatalf("Failed connect to %s:%s", host, port)
+		}
+		goto THIS
 	}
 
 	users, err := client.GetUsers()
@@ -37,6 +45,8 @@ func TestListUsers(t *testing.T) {
 		log.Println(err)
 	}
 	for _, u := range users {
-		fmt.Println(u)
+		if u.UID == "1000" {
+			fmt.Println(u)
+		}
 	}
 }

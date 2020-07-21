@@ -23,11 +23,11 @@ func Start() *Server {
 }
 
 func (s *Server) Stop() {
-	//cmd := exec.Command("docker-compose", "down", "--volumes")
-	//cmd.Stdout = os.Stdout
-	//cmd.Stderr = os.Stderr
-	//err := cmd.Start()
-	//if err != nil {
-	//	log.Fatalf("cmd.Run() failed with %s\n", err)
-	//}
+	cmd := exec.Command("docker-compose", "down")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Start()
+	if err != nil {
+		log.Fatalf("cmd.Run() failed with %s\n", err)
+	}
 }
