@@ -1,11 +1,13 @@
 package sshkeymanager
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"testing"
 
 	"github.com/rs-pro/sshkeymanager/testserver"
+
 )
 
 func TestMain(m *testing.M) {
@@ -21,9 +23,20 @@ func TestMain(m *testing.M) {
 func TestListUsers(t *testing.T) {
 	host := "localhost"
 	port := "2222"
-	client := sshkeymanager.NewClient(host, port, sshkeymanager.DefaultConfig)
+	clientCfg, err := makeTestConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+	client, err := NewClient(host, port, clientCfg)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	users, err := client.GetUsers()
 	if err != nil {
 		log.Println(err)
+	}
+	for _, u := range users {
+		fmt.Println(u)
 	}
 }

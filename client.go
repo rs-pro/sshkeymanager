@@ -6,8 +6,8 @@ import (
 )
 
 type Client struct {
-	host       string
-	port       string
+	Host       string
+	Port       string
 	SSHConfig  *ssh.ClientConfig
 	SSHClient  *ssh.Client
 	SSHSession *ssh.Session
@@ -21,10 +21,10 @@ func (c *Client) GetUser() string {
 
 // GetPort returns client's ssh host
 func (c *Client) GetHost() string {
-	return c.host
+	return c.Host
 }
 
 // GetPort returns client's ssh port
 func (c *Client) GetPort() string {
-	return c.host
+	return c.Port
 }

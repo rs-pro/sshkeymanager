@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Client) Connect() error {
-	client, err := ssh.Dial("tcp", c.host+":"+c.port, c.SSHConfig)
+	client, err := ssh.Dial("tcp", c.Host+":"+c.Port, c.SSHConfig)
 	if err != nil {
 		return err
 	}
@@ -17,7 +17,7 @@ func (c *Client) Connect() error {
 }
 
 func NewClient(host, port string, config *ssh.ClientConfig) (*Client, error) {
-	client := Client{host: host, port: port, SSHConfig: config}
+	client := Client{Host: host, Port: port, SSHConfig: config}
 	err := client.Connect()
 	if err != nil {
 		return nil, err

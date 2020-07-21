@@ -7,7 +7,9 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-var DefaultConfig *ssh.ClientConfig
+var (
+	DefaultConfig *ssh.ClientConfig
+)
 
 func init() {
 	DefaultConfig = makeConfig()
@@ -43,4 +45,26 @@ func makeConfig() *ssh.ClientConfig {
 	}
 
 	return config
+}
+
+func makeTestConfig() (*ssh.ClientConfig, error) {
+	key, err := ioutil.ReadFile("testdata/id_rsa")
+	if err != nil {
+		return nil, err
+	}
+
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	config := &ssh.ClientConfig{
+		User: "test",
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	return config, nil
 }

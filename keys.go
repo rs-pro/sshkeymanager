@@ -2,6 +2,8 @@ package sshkeymanager
 
 import (
 	"fmt"
+	"github.com/rs-pro/sshkeymanager/authorized_keys"
+	"github.com/rs-pro/sshkeymanager/passwd"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -9,9 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
-
-	"github.com/rs-pro/sshkeymanager/authorized_keys"
-	"github.com/rs-pro/sshkeymanager/passwd"
 )
 
 func (c *Client) GetKeys(user passwd.User) ([]authorized_keys.SSHKey, error) {

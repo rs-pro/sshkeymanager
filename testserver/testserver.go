@@ -11,7 +11,8 @@ type Server struct {
 }
 
 func Start() *Server {
-	cmd := exec.Command("docker-compose", "start")
+
+	cmd := exec.Command("docker-compose", "up", "-d")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
@@ -22,7 +23,11 @@ func Start() *Server {
 }
 
 func (s *Server) Stop() {
-	if err := s.Command.Process.Kill(); err != nil {
-		log.Fatal("failed to kill process: ", err)
-	}
+	//cmd := exec.Command("docker-compose", "down", "--volumes")
+	//cmd.Stdout = os.Stdout
+	//cmd.Stderr = os.Stderr
+	//err := cmd.Start()
+	//if err != nil {
+	//	log.Fatalf("cmd.Run() failed with %s\n", err)
+	//}
 }
