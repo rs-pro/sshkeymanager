@@ -29,12 +29,14 @@ func CheckApiKey() gin.HandlerFunc {
 			c.JSON(422, gin.H{
 				"message": "no api key",
 			})
+			c.Abort()
 			return
 		}
 		if api_key != API_KEY {
 			c.JSON(422, gin.H{
 				"message": "incorrect api key",
 			})
+			c.Abort()
 			return
 		}
 
