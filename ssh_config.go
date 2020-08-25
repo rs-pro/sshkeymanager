@@ -2,28 +2,45 @@ package sshkeymanager
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 
 	"golang.org/x/crypto/ssh"
+	kh "golang.org/x/crypto/ssh/knownhosts"
 )
 
-var DefaultConfig *ssh.ClientConfig
+func DegaultConfig() *ssh.ClientConfig {
+	var keys []string
 
-func init() {
-	DefaultConfig = makeConfig()
+	if os.Getenv("SSH_KEY") != "" {
+		keys = []string{os.Getenv("SSH_KEY")}
+	} else {
+		keys = []string{os.Getenv("HOME") + "/.ssh/id_rsa", os.Getenv("HOME") + "/.ssh/id_dsa"}
+	}
+
+	return MakeConfig(keys)
 }
 
-func makeConfig() *ssh.ClientConfig {
-	keys := []string{os.Getenv("HOME") + "/.ssh/id_rsa", os.Getenv("HOME") + "/.ssh/id_dsa"}
-
+func MakeConfig(keys []string) *ssh.ClientConfig {
 	config := &ssh.ClientConfig{
 		User: "root",
 		Auth: []ssh.AuthMethod{},
 	}
 
-	//config.HostKeyCallback = ssh.FixedHostKey(hostKey)
-	if os.Getenv("INSECURE_IGNORE_HOST_KEY") == "YES" {
+	if os.Getenv("SSH_HOST_KEY") != "" {
+		key, err := ssh.ParsePublicKey([]byte(os.Getenv("SSH_HOST_KEY")))
+		if err != nil {
+			log.Fatal("failed to parse public key: ", os.Getenv("SSH_HOST_KEY"))
+		}
+		config.HostKeyCallback = ssh.FixedHostKey(key)
+	} else if os.Getenv("INSECURE_IGNORE_HOST_KEY") == "YES" {
 		config.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+	} else {
+		hostKeyCallback, err := kh.New(os.Getenv("HOME") + "/.ssh/known_hosts")
+		if err != nil {
+			log.Fatal("could not create hostkeycallback function: ", err)
+		}
+		config.HostKeyCallback = hostKeyCallback
 	}
 
 	for _, keyname := range keys {
