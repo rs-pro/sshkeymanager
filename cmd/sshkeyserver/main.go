@@ -12,5 +12,5 @@ func main() {
 	if listen == "" {
 		listen = ":12020"
 	}
-	log.Fatal(api.GetRouter().Run(listen))
+	log.Fatal(api.GetRouter(api.GetClient).Run(listen))
 }

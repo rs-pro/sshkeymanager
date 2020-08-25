@@ -11,7 +11,8 @@ type Server struct {
 }
 
 func Start() *Server {
-	cmd := exec.Command("docker-compose", "up")
+	//cmd := exec.Command("docker-compose", "up", "--force-recreate", "--build")
+	cmd := exec.Command("docker-compose", "up", "--force-recreate")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	go func() {

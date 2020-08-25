@@ -1,21 +1,10 @@
 ---
 version: "2.1"
 services:
-  openssh-server:
-    image: linuxserver/openssh-server
+  ssh:
+    build: .
     container_name: sshkeymanager-test
     hostname: sshkeymanager-test
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Moscow
-      - PUBLIC_KEY_FILE=/testdata/id_rsa.pub
-      - SUDO_ACCESS=true
-      - PASSWORD_ACCESS=false
-      - USER_NAME=test
-    volumes:
-      - ./testdata:/testdata
-      #- ./testdata/config:/config
     ports:
       - "2222:2222"
 

@@ -1,6 +1,7 @@
 package sshkeymanager
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rs-pro/sshkeymanager/passwd"
 	"github.com/rs-pro/sshkeymanager/testserver"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,49 +18,30 @@ import (
 const host = "localhost"
 const port = "2222"
 
-func ExecCommand(command string) {
-	cmd := exec.Command("ssh", "-o StrictHostKeyChecking=no", "-itestdata/id_rsa", "-p "+port, "test@"+host, command)
-	cmd.Stdout = os.Stdout
+func ExecCommand(user, command string) string {
+	cmd := exec.Command("ssh", "-o StrictHostKeyChecking=no", "-itestdata/id_rsa", "-p "+port, user+"@"+host, command)
+	var buf *bytes.Buffer
+	cmd.Stdout = buf
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
 		log.Println("error in exec command", command, err)
-		// It's ok to have bad exit code - we are restarting SSH server
-		//panic(err)
 	}
+	return buf.String()
 }
 
 func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	log.Println("test server: starting")
 	server := testserver.Start()
-	defer server.Stop()
 	log.Println("test server: waiting to be up")
-	WaitForSshServer(host, port)
 
-	log.Println("test server: enabling root login")
-	command := `sudo mkdir /root/.ssh`
-	ExecCommand(command)
-
-	command = `sudo cp -R /config/.ssh/* /root/.ssh/`
-	ExecCommand(command)
-
-	command = `sudo chmod -R 0700 /root/.ssh/`
-	ExecCommand(command)
-
-	command = `grep -qxF "PermitRootLogin without-password" /etc/ssh/sshd_config || echo "PermitRootLogin without-password" | sudo tee -a /etc/ssh/sshd_config`
-	ExecCommand(command)
-
-	command = `sudo killall sshd`
-	ExecCommand(command)
-
-	log.Println("test server: restarted")
-	time.Sleep(1 * time.Second)
 	WaitForSshServer(host, port)
 
 	log.Println("test server: started")
 	result := m.Run()
 	log.Println("test server: stopping")
+	server.Stop()
 	os.Exit(result)
 }
 
@@ -88,11 +71,55 @@ func WaitForSshServer(host, port string) {
 	}
 }
 
-func TestListUsers(t *testing.T) {
-	client, err := NewClient(host, port, MakeConfig([]string{"./testdata/id_rsa"}))
+func TestSudo(t *testing.T) {
+	client, err := NewClient(host, port, "test", MakeConfig([]string{"./testdata/id_rsa"}))
 	assert.NoError(t, err)
+	assert.Equal(t, client.useSudo, true)
 
 	users, err := client.GetUsers()
 	assert.NoError(t, err)
-	assert.Len(t, users, 1)
+	assert.Len(t, users, 25) // value from a clean image
+}
+
+func GetClient(t *testing.T) *Client {
+	client, err := NewClient(host, port, "root", MakeConfig([]string{"./testdata/id_rsa"}))
+	assert.NoError(t, err)
+	return client
+}
+
+func TestListGroups(t *testing.T) {
+	client := GetClient(t)
+
+	users, err := client.GetUsers()
+	assert.NoError(t, err)
+	assert.Len(t, users, 25) // value from a clean image
+}
+
+func TestListUsers(t *testing.T) {
+	client := GetClient(t)
+
+	users, err := client.GetUsers()
+	assert.NoError(t, err)
+	assert.Len(t, users, 25) // value from a clean image
+}
+
+func TestAddUser(t *testing.T) {
+	client := GetClient(t)
+
+	u, err := client.AddUser(&passwd.User{
+		Name:  "user",
+		GID:   "1000",
+		Home:  "/data/user",
+		Shell: "/bin/bash",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "user", u.Name)
+	assert.Equal(t, "1000", u.GID)
+	assert.Equal(t, "/data/user", u.Home)
+	assert.Equal(t, "/bin/bash", u.Shell)
+
+	users, err := client.GetUsers()
+	assert.NoError(t, err)
+	assert.Len(t, users, 26)
+
 }

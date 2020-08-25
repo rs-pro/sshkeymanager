@@ -63,6 +63,12 @@ func main() {
 }
 ```
 
+## Running specs
+
+```
+env DEBUG=YES INSECURE_IGNORE_HOST_KEY=YES go test -v ./...
+```
+
 ## License
 
 MIT License

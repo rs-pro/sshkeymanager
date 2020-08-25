@@ -6,11 +6,13 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/rs-pro/sshkeymanager"
+	"github.com/rs-pro/sshkeymanager/passwd"
 	"github.com/urfave/cli/v2"
 )
 
 var Host = "localhost"
 var Port = "22"
+var User = "root"
 
 func main() {
 	App := cli.NewApp()
@@ -37,6 +39,12 @@ func main() {
 			Value:       "22",
 			Destination: &Port,
 		},
+		&cli.StringFlag{
+			Name:        "user",
+			Usage:       "ssh user",
+			Value:       "root",
+			Destination: &User,
+		},
 	}
 
 	App.Commands = []*cli.Command{
@@ -44,7 +52,10 @@ func main() {
 			Name:  "list-users",
 			Usage: "list users",
 			Action: func(c *cli.Context) error {
-				client := sshkeymanager.NewClient(Host, Port, sshkeymanager.DefaultConfig)
+				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				if err != nil {
+					return err
+				}
 				users, err := client.GetUsers()
 				if err != nil {
 					return err
@@ -61,46 +72,61 @@ func main() {
 					})
 				}
 				table.Render()
+				return nil
 			},
 		},
 		{
 			Name:  "add-user",
 			Usage: "add user",
 			Flags: []cli.Flag{
-				cli.IntFlag{
+				&cli.StringFlag{
 					Name:  "name",
 					Usage: "user name",
 				},
-				cli.IntFlag{
+				&cli.StringFlag{
 					Name:  "uid",
 					Usage: "user uid",
 				},
-				cli.IntFlag{
+				&cli.StringFlag{
 					Name:  "gid",
 					Usage: "user gid",
 				},
+				&cli.StringFlag{
+					Name:  "home",
+					Usage: "home dir",
+				},
 			},
 			Action: func(c *cli.Context) error {
-				projectId := c.Int64("project")
-				reindexer.Reindex(projectId)
+				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				if err != nil {
+					return err
+				}
+				u := &passwd.User{}
+				u.Name = c.String("name")
+				u.UID = c.String("uid")
+				u.GID = c.String("gid")
+				u.Home = c.String("home")
+
+				u, err = client.AddUser(u)
+				if err != nil {
+					return err
+				}
+				log.Println("added user:", u.Name, u.UID, u.GID)
 				return nil
-			},
-			Action: func(c *cli.Context) error {
-				//client := sshkeymanager.NewClient(Host, Port, sshkeymanager.DefaultConfig)
 			},
 		},
 		{
 			Name:  "list-keys",
 			Usage: "list keys",
 			Action: func(c *cli.Context) error {
-				//client := sshkeymanager.NewClient(Host, Port, sshkeymanager.DefaultConfig)
+				return nil
 			},
 		},
 		{
 			Name:  "add-key",
 			Usage: "add key",
 			Action: func(c *cli.Context) error {
-				//client := sshkeymanager.NewClient(Host, Port, sshkeymanager.DefaultConfig)
+				return nil
 			},
 		},
 	}

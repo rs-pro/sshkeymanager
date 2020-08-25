@@ -1,45 +1,54 @@
 package api
 
 import (
+	"log"
+	"math/rand"
 	"os"
+	"strconv"
+	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
 	zxcvbn "github.com/trustelem/zxcvbn"
 )
 
 var API_KEY string
 
+const MIN_LENGTH = 10
+const MIN_STRENGTH = 3
+
 func init() {
-	API_KEY = os.Getenv("GO_ENV")
-	if len(API_KEY) < 8 {
-		panic("bad API_KEY")
+	API_KEY = os.Getenv("API_KEY")
+	if len(API_KEY) < MIN_LENGTH {
+		panic("bad API_KEY - minimum " + strconv.Itoa(MIN_LENGTH) + " characters")
 	}
-	strength := zxcvbn.PasswordStrength(API_KEY, []string{})
-	if strength.Score < 3 {
+
+	strength := zxcvbn.PasswordStrength(API_KEY, []string{"go", "docker", "exec", "create", "your", "api", "key", "create-your-key"})
+	if strength.Score < MIN_STRENGTH {
+		log.Println("key strength score (from zxcvbn):", strength.Score)
+		log.Println("minimum strength: ", strconv.Itoa(MIN_STRENGTH))
 		panic("low strength API_KEY - please use a more secure api key")
 	}
-	spew.Dump(strength)
 }
 
 func CheckApiKey() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		api_key, ok := c.Request.Header.Get("X-Api-Key")
-		if !ok || api_key == "" {
-			c.JSON(422, gin.H{
+		api_key := c.Request.Header.Get("X-Api-Key")
+		if api_key == "" {
+			c.JSON(410, gin.H{
 				"message": "no api key",
 			})
 			c.Abort()
 			return
 		}
 		if api_key != API_KEY {
-			c.JSON(422, gin.H{
+			// Avoid returning bad api key too fast, so it's less easy to brute force
+			time.Sleep(time.Duration(rand.Intn(150)) * time.Millisecond)
+			c.JSON(410, gin.H{
 				"message": "incorrect api key",
 			})
 			c.Abort()
 			return
 		}
-
 		c.Next()
 	}
 }

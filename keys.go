@@ -79,7 +79,7 @@ func (c *Client) AddKey(user passwd.User, key string) error {
 }
 
 func (c *Client) StartSCP(session *ssh.Session) error {
-	err := session.Run("/usr/bin/scp -tr /")
+	err := session.Run(c.Prefix() + "/usr/bin/scp -tr /")
 	if err != nil {
 		return errors.Wrap(err, "Failed to run")
 	}

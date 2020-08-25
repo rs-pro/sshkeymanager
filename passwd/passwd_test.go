@@ -20,4 +20,8 @@ func TestParse(t *testing.T) {
 	assert.Equal(t, "", users[0].Desc, "")
 	assert.Equal(t, "/home/gleb", users[0].Home, "")
 	assert.Equal(t, "/usr/bin/fish", users[0].Shell, "")
+
+	assert.Equal(t, Example, users[0].Serialize(), "")
+
+	assert.Equal(t, "useradd -m -u 1000 -g 1001 -p x -d /home/gleb -s /usr/bin/fish gleb", users[0].UserAdd(), "")
 }

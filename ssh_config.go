@@ -9,7 +9,7 @@ import (
 	kh "golang.org/x/crypto/ssh/knownhosts"
 )
 
-func DegaultConfig() *ssh.ClientConfig {
+func DefaultConfig() *ssh.ClientConfig {
 	var keys []string
 
 	if os.Getenv("SSH_KEY") != "" {
@@ -34,6 +34,9 @@ func MakeConfig(keys []string) *ssh.ClientConfig {
 		}
 		config.HostKeyCallback = ssh.FixedHostKey(key)
 	} else if os.Getenv("INSECURE_IGNORE_HOST_KEY") == "YES" {
+		if os.Getenv("INSECURE_IGNORE_HOST_KEY") != "YES" {
+			log.Fatal("INSECURE_IGNORE_HOST_KEY: only possible value is YES in all caps")
+		}
 		config.HostKeyCallback = ssh.InsecureIgnoreHostKey()
 	} else {
 		hostKeyCallback, err := kh.New(os.Getenv("HOME") + "/.ssh/known_hosts")

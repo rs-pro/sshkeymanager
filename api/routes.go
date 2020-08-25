@@ -1,14 +1,31 @@
 package api
 
 import (
-	"github.com/davecgh/go-spew/spew"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs-pro/sshkeymanager"
 )
 
 var r *gin.Engine
 
-func GetRouter() *gin.Engine {
+// GetClient is designed to be overriden for custom API server settings
+func GetClient(c *gin.Context) *sshkeymanager.Client {
+	host := c.Param("host")
+	port := c.Param("port")
+	user := c.Param("user")
+	client, err := sshkeymanager.NewClient(host, port, user, sshkeymanager.DefaultConfig())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+		return nil
+	}
+	return client
+}
+
+// GetRouter
+func GetRouter(GetClient func(*gin.Context) *sshkeymanager.Client) *gin.Engine {
 	if r == nil {
 		r := gin.Default()
 		r.Use(CheckApiKey())
@@ -16,20 +33,22 @@ func GetRouter() *gin.Engine {
 		r.GET("/robots.txt", func(c *gin.Context) {
 			c.Writer.WriteHeader(http.StatusOK)
 			c.Writer.Write([]byte("User-agent: *\nDisallow: /"))
-		}
+		})
 
 		r.POST("/:host/:port/users", func(c *gin.Context) {
-			host := c.Param("host")
-			port := c.Param("port")
-			client := sshkeymanager.NewClient(host, port, sshkeymanager.DefaultConfig)
+			client := GetClient(c)
+			if client == nil {
+				return
+			}
 			users, err := client.GetUsers()
 			if err != nil {
-				c.JSON(status, map[string]string{
-					"error": err.Error() + ": " + message,
+				c.JSON(http.StatusInternalServerError, map[string]string{
+					"error": err.Error(),
 				})
 				return
 			}
-			spew.Dump(client)
+
+			c.JSON(http.StatusOK, users)
 		})
 	}
 
