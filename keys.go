@@ -1,25 +1,35 @@
 package sshkeymanager
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
-	"path/filepath"
 	"strings"
 
+	"github.com/alessio/shellescape"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh"
 
 	"github.com/rs-pro/sshkeymanager/authorized_keys"
+	"github.com/rs-pro/sshkeymanager/group"
 	"github.com/rs-pro/sshkeymanager/passwd"
 )
 
 func (c *Client) GetKeys(user passwd.User) ([]authorized_keys.SSHKey, error) {
-	raw, err := c.Execute("cat " + user.AuthorizedKeys())
+	raw, se, err := c.Execute("cat " + user.AuthorizedKeys())
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read "+user.AuthorizedKeys())
+		return []authorized_keys.SSHKey{}, errors.Wrap(err, raw+se+": failed to read "+user.AuthorizedKeys())
 	}
 	return authorized_keys.Parse(raw)
+}
+
+type KeyDoesNotExistError struct{}
+
+func (e *KeyDoesNotExistError) Error() string {
+	return "Key to delete not found in authorized_keys"
+}
+
+type KeyExistsError struct{}
+
+func (e *KeyExistsError) Error() string {
+	return "Key to add already present in authorized_keys"
 }
 
 func (c *Client) DeleteKey(user passwd.User, key string) error {
@@ -49,10 +59,10 @@ func (c *Client) DeleteKey(user passwd.User, key string) error {
 	}
 
 	if !keyExist {
-		return errors.New("Key to delete not found in authorized_keys")
+		return &KeyDoesNotExistError{}
 	}
 
-	return c.WriteKeys(user, newKeys)
+	return c.WriteKeys(&user, newKeys)
 }
 
 func (c *Client) AddKey(user passwd.User, key string) error {
@@ -66,52 +76,83 @@ func (c *Client) AddKey(user passwd.User, key string) error {
 	keys, err := c.GetKeys(user)
 
 	if err != nil {
-		return err
+		log.Println("WARN failed to read keys:", err)
 	}
 
 	for _, ck := range keys {
 		if k.Key == ck.Key {
-			return errors.New("Key already present in authorized_keys")
+			return &KeyExistsError{}
 		}
 	}
 
-	return c.WriteKeys(user, append(keys, k))
+	return c.WriteKeys(&user, append(keys, k))
 }
 
-func (c *Client) StartSCP(session *ssh.Session) error {
-	err := session.Run(c.Prefix() + "/usr/bin/scp -tr /")
-	if err != nil {
-		return errors.Wrap(err, "Failed to run")
+func (c *Client) WriteKeys(user *passwd.User, keys []authorized_keys.SSHKey) error {
+	if user.Name == "" {
+		return errors.New("no user name")
 	}
-	return nil
-}
 
-func (c *Client) WriteFile(path string, content []byte) error {
-	session, err := c.SSHClient.NewSession()
+	err := c.CreateSSHDir(user)
 	if err != nil {
-		return errors.Wrap(err, "ssh NewSession")
+		return err
 	}
-	defer session.Close()
-	go func() {
-		w, _ := session.StdinPipe()
-		defer w.Close()
-		fmt.Fprintln(w, "D0700", 0, filepath.Dir(path))
-		fmt.Fprintln(w, "C0600", len(content), filepath.Base(path))
-		fmt.Fprint(w, content)
-		fmt.Fprint(w, "\x00")
 
-		r, _ := session.StdoutPipe()
-		data, err := ioutil.ReadAll(r)
-		log.Println("scp response", data, err)
-		defer w.Close()
-		session.Close()
-	}()
-
-	c.StartSCP(session)
-	return nil
-}
-
-func (c *Client) WriteKeys(user passwd.User, keys []authorized_keys.SSHKey) error {
 	keyFile := authorized_keys.Generate(keys)
-	return c.WriteFile(user.AuthorizedKeys(), keyFile)
+	err = c.WriteFile(user.AuthorizedKeys(), keyFile)
+	if err != nil {
+		return err
+	}
+
+	err = c.ChownSSH(user)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) CreateSSHDir(user *passwd.User) error {
+	so, se, err := c.Execute("mkdir -p " + shellescape.Quote(user.Home+"/.ssh"))
+	if err != nil {
+		return errors.Wrap(err, so+se)
+	}
+	return nil
+}
+
+func (c *Client) ChownHomedir(user *passwd.User) error {
+	if user.Name == "" {
+		return errors.New("no user name")
+	}
+
+	g := &group.Group{}
+	g.GID = user.GID
+	g = c.FindGroup(g)
+	if g.Name == "" {
+		return errors.New("failed to find group")
+	}
+
+	so, se, err := c.Execute("chown -R " + shellescape.Quote(user.Name+":"+g.Name) + " " + shellescape.Quote(user.Home))
+	if err != nil {
+		return errors.Wrap(err, so+se)
+	}
+	return nil
+}
+
+func (c *Client) ChownSSH(user *passwd.User) error {
+	if user.Name == "" {
+		return errors.New("no user name")
+	}
+
+	g := &group.Group{}
+	g.GID = user.GID
+	g = c.FindGroup(g)
+	if g.Name == "" {
+		return errors.New("failed to find group")
+	}
+
+	so, se, err := c.Execute("chown -R " + shellescape.Quote(user.Name+":"+g.Name) + " " + shellescape.Quote(user.Home) + "/.ssh")
+	if err != nil {
+		return errors.Wrap(err, so+se)
+	}
+	return nil
 }

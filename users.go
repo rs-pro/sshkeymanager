@@ -3,6 +3,7 @@ package sshkeymanager
 import (
 	"log"
 
+	"github.com/alessio/shellescape"
 	"github.com/pkg/errors"
 	"github.com/rs-pro/sshkeymanager/passwd"
 )
@@ -12,9 +13,9 @@ func (c *Client) GetUsers() ([]passwd.User, error) {
 		return nil, errors.New("client not initialized")
 	}
 	if c.UsersCache == nil {
-		raw, err := c.Execute("cat /etc/passwd")
+		raw, se, err := c.Execute("cat /etc/passwd")
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, raw+se)
 		}
 		users, err := passwd.Parse(raw)
 		if err != nil {
@@ -72,9 +73,35 @@ func (c *Client) FindUser(user *passwd.User) *passwd.User {
 	return nil
 }
 
-func (c *Client) AddUser(user *passwd.User) (*passwd.User, error) {
+func (c *Client) CreateHome(u *passwd.User) (*passwd.User, error) {
+	if u.Name == "" {
+		return u, errors.New("user name cannot be empty")
+	}
+	if u.Home == "" {
+		u.Home = "/home/" + u.Name
+	}
+
+	err := c.CreateSSHDir(u)
+	if err != nil {
+		return u, err
+	}
+
+	so, se, err := c.Execute("cp -rT /etc/skel " + shellescape.Quote(u.Home))
+	if err != nil {
+		return u, errors.Wrap(err, so+se)
+	}
+
+	err = c.ChownHomedir(u)
+	if err != nil {
+		return u, err
+	}
+
+	return u, nil
+}
+
+func (c *Client) AddUser(user *passwd.User, createHome bool) (*passwd.User, error) {
 	if user.Name == "" {
-		return nil, errors.New("'group name cannot be empty'")
+		return nil, errors.New("user name cannot be empty")
 	}
 
 	u := c.FindUser(user)
@@ -82,9 +109,9 @@ func (c *Client) AddUser(user *passwd.User) (*passwd.User, error) {
 		return u, nil
 	}
 
-	_, err := c.Execute(user.UserAdd())
+	so, se, err := c.Execute(user.UserAdd())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, so+se)
 	}
 
 	c.ClearUserCache()
@@ -93,6 +120,36 @@ func (c *Client) AddUser(user *passwd.User) (*passwd.User, error) {
 
 	if u == nil {
 		return nil, errors.New("failed to add user")
+	}
+
+	if createHome {
+		u, err = c.CreateHome(u)
+		return u, err
+	} else {
+		return u, nil
+	}
+}
+
+func (c *Client) DeleteUser(user *passwd.User, removeHome bool) (*passwd.User, error) {
+	u := c.FindUser(user)
+	if u == nil {
+		return nil, errors.New("user not found, so not deleted")
+	}
+	if u.Name == "" {
+		return nil, errors.New("user name cannot be empty")
+	}
+
+	so, se, err := c.Execute(u.UserDelete(removeHome))
+	if err != nil {
+		return nil, errors.Wrap(err, so+se)
+	}
+
+	c.ClearUserCache()
+
+	u2 := c.FindUser(user)
+
+	if u2 != nil {
+		return u, errors.New("failed to delete user")
 	}
 	return u, nil
 }

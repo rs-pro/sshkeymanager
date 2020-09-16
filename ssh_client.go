@@ -40,22 +40,25 @@ func (c *Client) Connect() error {
 	return nil
 }
 
-func (c *Client) Execute(command string) (string, error) {
+func (c *Client) Execute(command string) (string, string, error) {
 	session, err := c.SSHClient.NewSession()
 	if err != nil {
-		return "", errors.Wrap(err, "ssh NewSession")
+		return "", "", errors.Wrap(err, "ssh NewSession")
 	}
 	defer session.Close()
 
-	var stdoutBuf bytes.Buffer
-	var stderrBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Stderr = &stderrBuf
-	session.Run(c.Prefix() + command)
-
-	if os.Getenv("DEBUG") == "YES" {
-		log.Println("execute:", command, "result:", stdoutBuf.String(), "errors:", stderrBuf.String())
+	var so, se bytes.Buffer
+	session.Stdout = &so
+	session.Stderr = &se
+	err = session.Run(c.Prefix() + command)
+	if err != nil {
+		log.Println("execute:", command, "result:", so.String(), se.String(), "error:", err)
+		return so.String(), se.String(), err
 	}
 
-	return stdoutBuf.String(), nil
+	if os.Getenv("DEBUG") == "YES" {
+		log.Println("execute:", command, "result:", so.String(), se.String())
+	}
+
+	return so.String(), se.String(), nil
 }

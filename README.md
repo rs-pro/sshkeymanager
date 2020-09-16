@@ -1,4 +1,7 @@
 # golang ssh key manager
+
+Includes CLI tool, API server and a go library.
+
 ```
 $ go get github.com/rs-pro/sshkeymanager
 ```

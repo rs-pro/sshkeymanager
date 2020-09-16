@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/alessio/shellescape"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -54,8 +55,16 @@ func (g *Group) GroupAdd() string {
 		"groupadd",
 	}
 	if g.GID != "" {
-		command = append(command, "-g "+g.GID)
+		command = append(command, "-g "+shellescape.Quote(g.GID))
 	}
 	command = append(command, g.Name)
+	return strings.Join(command, " ")
+}
+
+func (g *Group) GroupDelete() string {
+	command := []string{
+		"groupdel",
+		g.Name,
+	}
 	return strings.Join(command, " ")
 }

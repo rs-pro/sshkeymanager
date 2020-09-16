@@ -4,7 +4,11 @@ import (
 	"log"
 	"strings"
 
+	"github.com/alessio/shellescape"
 	"github.com/davecgh/go-spew/spew"
+
+	"github.com/GehirnInc/crypt"
+	_ "github.com/GehirnInc/crypt/sha256_crypt"
 )
 
 type User struct {
@@ -46,8 +50,12 @@ func Parse(raw string) ([]User, error) {
 	return users, nil
 }
 
+func (u *User) SSHDir() string {
+	return u.Home + "/.ssh"
+}
+
 func (u *User) AuthorizedKeys() string {
-	return u.Home + "/.ssh/authorized_keys"
+	return u.SSHDir() + "/authorized_keys"
 }
 
 func (u *User) Serialize() string {
@@ -62,25 +70,42 @@ func (u *User) Serialize() string {
 	}, ":")
 }
 
+func (u *User) SetPassword(password string) {
+	crypt := crypt.SHA256.New()
+	ret, _ := crypt.Generate([]byte(password), []byte("$5$zz"))
+	u.Password = ret
+}
+
 func (u *User) UserAdd() string {
 	command := []string{
 		"useradd",
 		"-m",
 	}
 	if u.UID != "" {
-		command = append(command, "-u "+u.UID)
+		command = append(command, "-u "+shellescape.Quote(u.UID))
 	}
-	command = append(command, "-g "+u.GID)
+	command = append(command, "-g "+shellescape.Quote(u.GID))
 	if u.Password != "" {
-		command = append(command, "-p "+u.Password)
+		command = append(command, "-p "+shellescape.Quote(u.Password))
 	} else {
 		command = append(command, "-p x")
 	}
 	if u.Home != "" {
-		command = append(command, "-d "+u.Home)
+		command = append(command, "-d "+shellescape.Quote(u.Home))
 	}
 	if u.Shell != "" {
-		command = append(command, "-s "+u.Shell)
+		command = append(command, "-s "+shellescape.Quote(u.Shell))
+	}
+	command = append(command, u.Name)
+	return strings.Join(command, " ")
+}
+
+func (u *User) UserDelete(removeHome bool) string {
+	command := []string{
+		"userdel",
+	}
+	if removeHome {
+		command = append(command, "-r")
 	}
 	command = append(command, u.Name)
 	return strings.Join(command, " ")

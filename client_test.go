@@ -111,7 +111,7 @@ func TestAddUser(t *testing.T) {
 		GID:   "1000",
 		Home:  "/data/user",
 		Shell: "/bin/bash",
-	})
+	}, false)
 	assert.NoError(t, err)
 	assert.Equal(t, "user", u.Name)
 	assert.Equal(t, "1000", u.GID)

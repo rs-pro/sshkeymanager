@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 type SSHKey struct {
@@ -22,7 +24,7 @@ func Parse(data string) ([]SSHKey, error) {
 		var sshKey SSHKey
 		sshKey.Key = k[0] + " " + k[1]
 		if len(k) > 2 {
-			sshKey.Email = k[2]
+			sshKey.Email = strings.Join(k[2:], " ")
 		}
 		sshKeys = append(sshKeys, sshKey)
 	}
@@ -30,7 +32,8 @@ func Parse(data string) ([]SSHKey, error) {
 }
 
 func Generate(keys []SSHKey) []byte {
-	var out *bytes.Buffer
+	out := &bytes.Buffer{}
+	spew.Dump(keys)
 	for _, k := range keys {
 		fmt.Fprintln(out, k.Key+" "+k.Email)
 	}

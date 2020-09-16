@@ -12,9 +12,9 @@ func (c *Client) GetGroups() ([]group.Group, error) {
 		return nil, errors.New("client not initialized")
 	}
 	if c.GroupsCache == nil {
-		raw, err := c.Execute("cat /etc/group")
+		raw, se, err := c.Execute("cat /etc/group")
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, raw+se)
 		}
 		groups, err := group.Parse(raw)
 		if err != nil {
@@ -46,16 +46,16 @@ func (c *Client) FindGroup(group *group.Group) *group.Group {
 
 func (c *Client) AddGroup(group *group.Group) (*group.Group, error) {
 	if group.Name == "" {
-		return nil, errors.New("'group name cannot be empty'")
+		return nil, errors.New("group name cannot be empty")
 	}
 	g := c.FindGroup(group)
 	if g != nil {
 		return g, nil
 	}
 
-	_, err := c.Execute(group.GroupAdd())
+	so, se, err := c.Execute(group.GroupAdd())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, so+se)
 	}
 
 	c.ClearGroupCache()
@@ -63,6 +63,29 @@ func (c *Client) AddGroup(group *group.Group) (*group.Group, error) {
 	g = c.FindGroup(group)
 	if g == nil {
 		return nil, errors.New("failed to add group")
+	}
+	return g, nil
+}
+
+func (c *Client) DeleteGroup(group *group.Group) (*group.Group, error) {
+	if group.Name == "" {
+		return nil, errors.New("group name cannot be empty")
+	}
+	g := c.FindGroup(group)
+	if g == nil {
+		return g, errors.New("group not found, so not deleted")
+	}
+
+	so, se, err := c.Execute(group.GroupDelete())
+	if err != nil {
+		return g, errors.Wrap(err, so+se)
+	}
+
+	c.ClearGroupCache()
+
+	g2 := c.FindGroup(group)
+	if g2 != nil {
+		return g2, errors.New("failed to delete group")
 	}
 	return g, nil
 }

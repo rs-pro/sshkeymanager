@@ -3,6 +3,8 @@ module github.com/rs-pro/sshkeymanager
 go 1.14
 
 require (
+	github.com/GehirnInc/crypt v0.0.0-20200316065508-bb7000b8a962
+	github.com/alessio/shellescape v1.2.2
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b // indirect
 	github.com/bramvdbogaerde/go-scp v0.0.0-20200518191442-5c8efdd1d925
 	github.com/davecgh/go-spew v1.1.1
