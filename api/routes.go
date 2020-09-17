@@ -9,19 +9,31 @@ import (
 
 var r *gin.Engine
 
+func SetClient(GetClient func(*gin.Context) *sshkeymanager.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		client := GetClient(c)
+		if client == nil {
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 // GetRouter
 func GetRouter(GetClient func(*gin.Context) *sshkeymanager.Client) *gin.Engine {
 	if r == nil {
 		r := gin.Default()
 		r.Use(CheckApiKey())
+		r.Use(SetClient(GetClient))
 
 		r.GET("/robots.txt", func(c *gin.Context) {
 			c.Writer.WriteHeader(http.StatusOK)
 			c.Writer.Write([]byte("User-agent: *\nDisallow: /"))
 		})
 
-		r.POST("/list-users", GetUsers)
-		r.POST("/list-groups", GetGroups)
+		r.POST("/list-groups", ListGroups)
+		r.POST("/list-users", ListUsers)
 	}
 
 	return r

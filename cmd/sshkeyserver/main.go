@@ -2,15 +2,15 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/rs-pro/sshkeymanager/api"
+	"github.com/rs-pro/sshkeymanager/config"
 )
 
 func main() {
-	listen := os.Getenv("LISTEN")
+	listen := config.Config.Listen
 	if listen == "" {
-		listen = ":12020"
+		listen = "127.0.0.1:12020"
 	}
-	log.Fatal(api.GetRouter(api.GetClient).Run(listen))
+	log.Fatal(api.GetRouter(api.DefaultGetClient).Run(listen))
 }

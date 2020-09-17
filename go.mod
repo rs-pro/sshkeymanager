@@ -11,6 +11,7 @@ require (
 	github.com/dlclark/regexp2 v1.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/gin-gonic/gin v1.6.3
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/rs-pro/docker-exec-api v0.0.0-20200806181654-eaad94d1a95b

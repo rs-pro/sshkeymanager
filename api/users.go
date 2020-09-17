@@ -7,10 +7,6 @@ import (
 )
 
 func ListUsers(c *gin.Context) {
-	client := GetClient(c)
-	if client == nil {
-		return
-	}
 	users, err := client.GetUsers()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, map[string]string{
@@ -22,7 +18,7 @@ func ListUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-func ListUsers(c *gin.Context) {
+func AddUser(c *gin.Context) {
 	client := GetClient(c)
 	if client == nil {
 		return

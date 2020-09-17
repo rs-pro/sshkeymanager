@@ -3,11 +3,11 @@ package api
 import (
 	"log"
 	"math/rand"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs-pro/sshkeymanager/config"
 	zxcvbn "github.com/trustelem/zxcvbn"
 )
 
@@ -17,7 +17,7 @@ const MIN_LENGTH = 10
 const MIN_STRENGTH = 3
 
 func init() {
-	API_KEY = os.Getenv("API_KEY")
+	API_KEY = config.Config.ApiKey
 	if len(API_KEY) < MIN_LENGTH {
 		panic("bad API_KEY - minimum " + strconv.Itoa(MIN_LENGTH) + " characters")
 	}
