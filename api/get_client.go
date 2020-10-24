@@ -17,9 +17,9 @@ func GetClient(c *gin.Context) *sshkeymanager.Client {
 
 // DefaultGetClient is designed to be overriden for custom API server settings
 func DefaultGetClient(c *gin.Context) *sshkeymanager.Client {
-	host := c.Param("host")
-	port := c.Param("port")
-	user := c.Param("user")
+	host := c.Query("host")
+	port := c.Query("port")
+	user := c.Query("user")
 	client, err := sshkeymanager.NewClient(host, port, user, sshkeymanager.DefaultConfig())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, map[string]string{

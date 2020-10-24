@@ -1,41 +1,43 @@
 package client
+
 import (
-"github.com/go-resty/resty"
+	"github.com/go-resty/resty/v2"
 )
-		
 
 type Client struct {
-	ApiKey string
-	ApiHost string
+	ApiKey    string
+	ApiHost   string
 	ApiClient *resty.Client
-	Host string
-	Port string
-	User string
+	Host      string
+	Port      string
+	User      string
 }
 
-func NewClient(apiKey, apiHost string) *Client {
+func NewClient(apiHost, apiKey string) *Client {
 	return &Client{
-		ApiKey: apiKey,
-		ApiHost: apiHost,
+		ApiKey:    apiKey,
+		ApiHost:   apiHost,
 		ApiClient: resty.New(),
 	}
 }
 
-func (c *Client) R() *resty.R {
+func (c *Client) R() *resty.Request {
 	return c.ApiClient.R().
 		SetHeader("X-Api-Key", c.ApiKey).
 		SetQueryParams(map[string]string{
-				"host": c.Host,
-				"port": c.Port,
-				"user":c.User,
+			"host": c.Host,
+			"port": c.Port,
+			"user": c.User,
 		})
 }
 
-func (c *Client) GetUsers() []passwd.User, error {
-	request := {}
-      SetBody(api.GetUsersRequest{
+func (c *Client) GetURL(method string) string {
+	return c.ApiHost + "/" + method
+}
 
-			}).
-      SetResult(&AuthSuccess{}).    // or SetResult(AuthSuccess{}).
-      Post(c.ApiHost + "/" + url)
+func (c *Client) Execute(method string, request, result interface{}) (interface{}, error) {
+	return c.R().
+		SetBody(request).
+		SetResult(result).
+		Post(c.GetURL(method))
 }

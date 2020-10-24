@@ -32,8 +32,12 @@ func GetRouter(GetClient func(*gin.Context) *sshkeymanager.Client) *gin.Engine {
 			c.Writer.Write([]byte("User-agent: *\nDisallow: /"))
 		})
 
-		r.POST("/list-groups", ListGroups)
-		r.POST("/list-users", ListUsers)
+		r.POST("/get-groups", GetGroups)
+		r.POST("/add-group", AddGroup)
+		r.POST("/delete-group", DeleteGroup)
+
+		r.POST("/get-users", GetUsers)
+		r.POST("/add-user", AddUser)
 	}
 
 	return r

@@ -1,6 +1,16 @@
 # golang ssh key manager
 
-Includes CLI tool, API server and a go library.
+Includes a golang library, API server and client library, and a CLI tool with support for working locally or via a remote server.
+
+## Project status:
+
+Pre-alpha. Key management works, but most extra features (api, client-server mode etc) are not finished.
+
+## Security contact
+
+Please be responsible and contact me directly at glebtv [at] gmail.com in case you find security issues.
+
+### Not intended for web-facing applications. No safeguards or security measures included besides API Key. You should mplement your own.
 
 ```
 $ go get github.com/rs-pro/sshkeymanager

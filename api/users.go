@@ -4,18 +4,42 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+	"github.com/rs-pro/sshkeymanager/passwd"
 )
 
-func ListUsers(c *gin.Context) {
+type GetUsersResponse struct {
+	Users []passwd.User `json:"users"`
+	Err   error         `json:"error"`
+}
+
+func GetUsers(c *gin.Context) {
+	client := GetClient(c)
+	if client == nil {
+		return
+	}
+
 	users, err := client.GetUsers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
+		c.JSON(http.StatusInternalServerError, GetUsersResponse{
+			Err: err,
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, users)
+	c.JSON(http.StatusOK, GetUsersResponse{
+		Users: users,
+	})
+}
+
+type AddUserRequest struct {
+	User       *passwd.User `json:"user"`
+	CreateHome bool         `json:"create_home"`
+}
+
+type AddUserResponse struct {
+	User *passwd.User `json:"user"`
+	Err  error        `json:"error"`
 }
 
 func AddUser(c *gin.Context) {
@@ -23,13 +47,25 @@ func AddUser(c *gin.Context) {
 	if client == nil {
 		return
 	}
-	users, err := client.GetUsers()
+
+	req := AddUserRequest{}
+	err := c.BindJSON(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
+		c.JSON(http.StatusUnprocessableEntity, AddUserResponse{
+			Err: errors.Wrap(err, "bad json format"),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, users)
+	user, err := client.AddUser(req.User, req.CreateHome)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, AddUserResponse{
+			Err: err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, AddUserResponse{
+		User: user,
+	})
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/rs-pro/sshkeymanager"
+	"github.com/rs-pro/sshkeymanager/client"
 	"github.com/rs-pro/sshkeymanager/group"
 	"github.com/rs-pro/sshkeymanager/passwd"
 	"github.com/urfave/cli/v2"
@@ -16,6 +17,16 @@ import (
 var Host = "localhost"
 var Port = "22"
 var User = "root"
+var Server = ""
+var ApiKey = ""
+
+func getClient() (sshkeymanager.ClientInterface, error) {
+	if Server != "" && ApiKey != "" {
+		return sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+	} else {
+		return client.NewClient(Server, ApiKey), nil
+	}
+}
 
 func main() {
 	App := cli.NewApp()
@@ -48,6 +59,18 @@ func main() {
 			Value:       "root",
 			Destination: &User,
 		},
+		&cli.StringFlag{
+			Name:        "server",
+			Usage:       "keymanager server",
+			Value:       "",
+			Destination: &Server,
+		},
+		&cli.StringFlag{
+			Name:        "apikey",
+			Usage:       "keymanager server api key",
+			Value:       "",
+			Destination: &ApiKey,
+		},
 	}
 
 	App.Commands = []*cli.Command{
@@ -55,7 +78,7 @@ func main() {
 			Name:  "list-groups",
 			Usage: "list groups",
 			Action: func(c *cli.Context) error {
-				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				client, err := getClient()
 				if err != nil {
 					return err
 				}
@@ -95,7 +118,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				client, err := getClient()
 				if err != nil {
 					return err
 				}
@@ -126,7 +149,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				client, err := getClient()
 				if err != nil {
 					return err
 				}
@@ -149,7 +172,7 @@ func main() {
 			Name:  "list-users",
 			Usage: "list users",
 			Action: func(c *cli.Context) error {
-				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				client, err := getClient()
 				if err != nil {
 					return err
 				}
@@ -207,7 +230,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				client, err := getClient()
 				if err != nil {
 					return err
 				}
@@ -250,7 +273,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				client, err := getClient()
 				if err != nil {
 					return err
 				}
@@ -281,7 +304,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				client, err := getClient()
 				if err != nil {
 					return err
 				}
@@ -318,7 +341,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				client, err := getClient()
 				if err != nil {
 					return err
 				}
@@ -355,7 +378,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				client, err := sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+				client, err := getClient()
 				if err != nil {
 					return err
 				}

@@ -30,5 +30,5 @@ func (c *Client) GetHost() string {
 
 // GetPort returns client's ssh port
 func (c *Client) GetPort() string {
-	return c.host
+	return c.port
 }

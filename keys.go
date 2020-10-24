@@ -126,7 +126,7 @@ func (c *Client) ChownHomedir(user *passwd.User) error {
 
 	g := &group.Group{}
 	g.GID = user.GID
-	g = c.FindGroup(g)
+	g, _ = c.FindGroup(g)
 	if g.Name == "" {
 		return errors.New("failed to find group")
 	}
@@ -145,7 +145,7 @@ func (c *Client) ChownSSH(user *passwd.User) error {
 
 	g := &group.Group{}
 	g.GID = user.GID
-	g = c.FindGroup(g)
+	g, _ = c.FindGroup(g)
 	if g.Name == "" {
 		return errors.New("failed to find group")
 	}

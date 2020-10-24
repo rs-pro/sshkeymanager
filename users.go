@@ -27,50 +27,51 @@ func (c *Client) GetUsers() ([]passwd.User, error) {
 	return *c.UsersCache, nil
 }
 
-func (c *Client) ClearUserCache() {
+func (c *Client) ClearUserCache() error {
 	c.UsersCache = nil
+	return nil
 }
 
-func (c *Client) GetUserByUid(uid string) *passwd.User {
+func (c *Client) GetUserByUid(uid string) (*passwd.User, error) {
 	users, err := c.GetUsers()
 	if err != nil {
 		log.Println(err)
-		return nil
+		return nil, nil
 	}
 	for _, u := range users {
 		if u.UID == uid {
-			return &u
+			return &u, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
-func (c *Client) GetUserByName(name string) *passwd.User {
+func (c *Client) GetUserByName(name string) (*passwd.User, error) {
 	users, err := c.GetUsers()
 	if err != nil {
 		log.Println(err)
-		return nil
+		return nil, nil
 	}
 	for _, u := range users {
 		if u.Name == name {
-			return &u
+			return &u, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
-func (c *Client) FindUser(user *passwd.User) *passwd.User {
+func (c *Client) FindUser(user *passwd.User) (*passwd.User, error) {
 	users, err := c.GetUsers()
 	if err != nil {
 		log.Println(err)
-		return nil
+		return nil, nil
 	}
 	for _, u := range users {
 		if u.UID == user.UID || u.Name == user.Name {
-			return &u
+			return &u, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func (c *Client) CreateHome(u *passwd.User) (*passwd.User, error) {
@@ -104,7 +105,7 @@ func (c *Client) AddUser(user *passwd.User, createHome bool) (*passwd.User, erro
 		return nil, errors.New("user name cannot be empty")
 	}
 
-	u := c.FindUser(user)
+	u, _ := c.FindUser(user)
 	if u != nil {
 		return u, nil
 	}
@@ -116,7 +117,7 @@ func (c *Client) AddUser(user *passwd.User, createHome bool) (*passwd.User, erro
 
 	c.ClearUserCache()
 
-	u = c.FindUser(user)
+	u, _ = c.FindUser(user)
 
 	if u == nil {
 		return nil, errors.New("failed to add user")
@@ -131,7 +132,7 @@ func (c *Client) AddUser(user *passwd.User, createHome bool) (*passwd.User, erro
 }
 
 func (c *Client) DeleteUser(user *passwd.User, removeHome bool) (*passwd.User, error) {
-	u := c.FindUser(user)
+	u, _ := c.FindUser(user)
 	if u == nil {
 		return nil, errors.New("user not found, so not deleted")
 	}
@@ -146,7 +147,7 @@ func (c *Client) DeleteUser(user *passwd.User, removeHome bool) (*passwd.User, e
 
 	c.ClearUserCache()
 
-	u2 := c.FindUser(user)
+	u2, _ := c.FindUser(user)
 
 	if u2 != nil {
 		return u, errors.New("failed to delete user")
