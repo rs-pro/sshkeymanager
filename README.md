@@ -76,6 +76,15 @@ func main() {
 }
 ```
 
+## Client-server mode
+
+Create config.yml (see example)
+
+```
+KEY_PASS=your-ssh-key-passphrase go run cmd/sshkeyserver/main.go
+go run cmd/sshkeymanager/main.go --keyserver http://localhost:12010 --apikey your-key --host r8s.ru list-users
+```
+
 ## Running specs
 
 ```
