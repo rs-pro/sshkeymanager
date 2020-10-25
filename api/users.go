@@ -18,7 +18,6 @@ func GetUsers(c *gin.Context) {
 	if client == nil {
 		return
 	}
-
 	users, err := client.GetUsers()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GetUsersResponse{

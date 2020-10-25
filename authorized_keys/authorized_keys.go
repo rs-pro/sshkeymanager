@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 type SSHKey struct {
-	Key   string
-	Email string
+	Key   string `json:"key"`
+	Email string `json:"email"`
 }
 
 func Parse(data string) ([]SSHKey, error) {
@@ -33,7 +31,6 @@ func Parse(data string) ([]SSHKey, error) {
 
 func Generate(keys []SSHKey) []byte {
 	out := &bytes.Buffer{}
-	spew.Dump(keys)
 	for _, k := range keys {
 		fmt.Fprintln(out, k.Key+" "+k.Email)
 	}

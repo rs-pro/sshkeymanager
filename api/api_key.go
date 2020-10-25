@@ -35,7 +35,7 @@ func CheckApiKey() gin.HandlerFunc {
 		api_key := c.Request.Header.Get("X-Api-Key")
 		if api_key == "" {
 			c.JSON(410, gin.H{
-				"message": "no api key",
+				"error": "no api key",
 			})
 			c.Abort()
 			return
@@ -44,7 +44,7 @@ func CheckApiKey() gin.HandlerFunc {
 			// Avoid returning bad api key too fast, so it's less easy to brute force
 			time.Sleep(time.Duration(rand.Intn(150)) * time.Millisecond)
 			c.JSON(410, gin.H{
-				"message": "incorrect api key",
+				"error": "incorrect api key",
 			})
 			c.Abort()
 			return

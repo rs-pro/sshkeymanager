@@ -17,14 +17,20 @@ import (
 var Host = "localhost"
 var Port = "22"
 var User = "root"
-var Server = ""
+var KeyServer = ""
 var ApiKey = ""
 
 func getClient() (sshkeymanager.ClientInterface, error) {
-	if Server != "" && ApiKey != "" {
-		return sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
+	if KeyServer != "" || ApiKey != "" {
+		if KeyServer == "" {
+			return nil, errors.New("no key server provided (or remove api key)")
+		}
+		if ApiKey == "" {
+			return nil, errors.New("no api key provided (or remove key server)")
+		}
+		return client.NewClient(KeyServer, ApiKey).WithConfig(Host, Port, User), nil
 	} else {
-		return client.NewClient(Server, ApiKey), nil
+		return sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
 	}
 }
 
@@ -46,30 +52,35 @@ func main() {
 			Usage:       "ssh host",
 			Value:       "localhost",
 			Destination: &Host,
+			EnvVars:     []string{"SSH_HOST"},
 		},
 		&cli.StringFlag{
 			Name:        "port",
 			Usage:       "ssh port",
 			Value:       "22",
 			Destination: &Port,
+			EnvVars:     []string{"SSH_PORT"},
 		},
 		&cli.StringFlag{
 			Name:        "user",
 			Usage:       "ssh user",
 			Value:       "root",
 			Destination: &User,
+			EnvVars:     []string{"SSH_USER"},
 		},
 		&cli.StringFlag{
-			Name:        "server",
+			Name:        "keyserver",
 			Usage:       "keymanager server",
 			Value:       "",
-			Destination: &Server,
+			Destination: &KeyServer,
+			EnvVars:     []string{"KEY_SERVER"},
 		},
 		&cli.StringFlag{
 			Name:        "apikey",
 			Usage:       "keymanager server api key",
 			Value:       "",
 			Destination: &ApiKey,
+			EnvVars:     []string{"API_KEY"},
 		},
 	}
 
@@ -157,7 +168,10 @@ func main() {
 				g.GID = c.String("gid")
 				g.Name = c.String("name")
 				if g.Name == "" && g.GID != "" {
-					g = client.FindGroup(g)
+					g, err = client.FindGroup(g)
+					if err != nil {
+						return err
+					}
 				}
 
 				_, err = client.DeleteGroup(g)
@@ -311,7 +325,10 @@ func main() {
 				u := &passwd.User{}
 				u.Name = c.String("name")
 				u.UID = c.String("uid")
-				u = client.FindUser(u)
+				u, err = client.FindUser(u)
+				if err != nil {
+					return err
+				}
 				if u == nil {
 					return errors.New("user not found")
 				}
@@ -349,7 +366,10 @@ func main() {
 				u := &passwd.User{}
 				u.Name = c.String("name")
 				u.UID = c.String("uid")
-				u = client.FindUser(u)
+				u, err = client.FindUser(u)
+				if err != nil {
+					return err
+				}
 				if u == nil {
 					return errors.New("user not found")
 				}
@@ -386,7 +406,10 @@ func main() {
 				u := &passwd.User{}
 				u.Name = c.String("name")
 				u.UID = c.String("uid")
-				u = client.FindUser(u)
+				u, err = client.FindUser(u)
+				if err != nil {
+					return err
+				}
 				if u == nil {
 					return errors.New("user not found")
 				}

@@ -31,11 +31,22 @@ func (c *Client) R() *resty.Request {
 		})
 }
 
+func (c *Client) WithConfig(host, port, user string) *Client {
+	return &Client{
+		ApiKey:    c.ApiKey,
+		ApiHost:   c.ApiHost,
+		ApiClient: resty.New(),
+		Host:      host,
+		Port:      port,
+		User:      user,
+	}
+}
+
 func (c *Client) GetURL(method string) string {
 	return c.ApiHost + "/" + method
 }
 
-func (c *Client) Execute(method string, request, result interface{}) (interface{}, error) {
+func (c *Client) Execute(method string, request, result interface{}) (*resty.Response, error) {
 	return c.R().
 		SetBody(request).
 		SetResult(result).

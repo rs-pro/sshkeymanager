@@ -1,20 +1,23 @@
 package client
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	"github.com/rs-pro/sshkeymanager/api"
 	"github.com/rs-pro/sshkeymanager/passwd"
 )
 
 func (c *Client) GetUsers() ([]passwd.User, error) {
-	response, err := c.Execute("get-users", api.EmptyRequest{}, &api.GetUsersResponse{})
-	spew.Dump(response)
+	r, err := c.Execute("get-users", &api.EmptyRequest{}, &api.GetUsersResponse{})
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, err
+	gr := r.Result().(*api.GetUsersResponse)
+
+	return gr.Users, err
 }
 
 func (c *Client) ClearUserCache() error {
-	_, err := c.Execute("clear-group-cache", api.EmptyRequest{}, &api.EmptyResponse{})
+	_, err := c.Execute("clear-group-cache", &api.EmptyRequest{}, &api.EmptyResponse{})
 	return err
 }
 

@@ -9,10 +9,10 @@ import (
 )
 
 type Group struct {
-	Name     string
-	Password string
-	GID      string
-	Members  string
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	GID      string `json:"gid"`
+	Members  string `json:"members"`
 }
 
 func Parse(raw string) ([]Group, error) {

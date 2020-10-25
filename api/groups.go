@@ -26,6 +26,41 @@ func GetGroups(c *gin.Context) {
 	})
 }
 
+type FindGroupRequest struct {
+	Group *group.Group `json:"group"`
+}
+type FindGroupResponse struct {
+	Group *group.Group `json:"group"`
+	Err   error        `json:"error"`
+}
+
+func FindGroup(c *gin.Context) {
+	client := GetClient(c)
+	if client == nil {
+		return
+	}
+
+	req := FindGroupRequest{}
+	err := c.BindJSON(req)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, FindGroupResponse{
+			Err: errors.Wrap(err, "bad json format"),
+		})
+		return
+	}
+
+	g, err := client.AddGroup(req.Group)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+	log.Println("added group:", g.GID, g.Name, g.Members)
+
+	c.JSON(http.StatusOK, AddGroupResponse{Group: g})
+}
+
 type AddGroupRequest struct {
 	Group *group.Group `json:"group"`
 }
@@ -51,8 +86,8 @@ func AddGroup(c *gin.Context) {
 
 	g, err := client.AddGroup(req.Group)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
+		c.JSON(http.StatusInternalServerError, AddGroupResponse{
+			Err: err,
 		})
 		return
 	}

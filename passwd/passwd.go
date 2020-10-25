@@ -12,13 +12,13 @@ import (
 )
 
 type User struct {
-	Name     string
-	Password string
-	UID      string
-	GID      string
-	Desc     string
-	Home     string
-	Shell    string
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	UID      string `json:"uid"`
+	GID      string `json:"gid"`
+	Desc     string `json:"desc"`
+	Home     string `json:"home"`
+	Shell    string `json:"shell"`
 }
 
 func Parse(raw string) ([]User, error) {
