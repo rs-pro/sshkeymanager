@@ -17,16 +17,17 @@ func (c *Client) GetUsers() ([]passwd.User, error) {
 }
 
 func (c *Client) ClearUserCache() error {
-	_, err := c.Execute("clear-group-cache", &api.EmptyRequest{}, &api.EmptyResponse{})
-	return err
+	//_, err := c.Execute("clear-user-cache", &api.EmptyRequest{}, &api.EmptyResponse{})
+	//return err
+	return nil
 }
 
 func (c *Client) GetUserByUid(uid string) (*passwd.User, error) {
-	return nil, nil
+	return c.FindUser(&passwd.User{UID: uid})
 }
 
 func (c *Client) GetUserByName(name string) (*passwd.User, error) {
-	return nil, nil
+	return c.FindUser(&passwd.User{Name: name})
 }
 
 func (c *Client) FindUser(user *passwd.User) (*passwd.User, error) {

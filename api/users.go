@@ -5,13 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"github.com/rs-pro/sshkeymanager/passwd"
 )
-
-type GetUsersResponse struct {
-	Users []passwd.User `json:"users"`
-	Err   error         `json:"error"`
-}
 
 func GetUsers(c *gin.Context) {
 	client := GetClient(c)
@@ -20,25 +14,43 @@ func GetUsers(c *gin.Context) {
 	}
 	users, err := client.GetUsers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, GetUsersResponse{
+		c.JSON(http.StatusInternalServerError, UsersResponse{
 			Err: err,
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, GetUsersResponse{
+	c.JSON(http.StatusOK, UsersResponse{
 		Users: users,
 	})
 }
 
-type AddUserRequest struct {
-	User       *passwd.User `json:"user"`
-	CreateHome bool         `json:"create_home"`
-}
+func FindUser(c *gin.Context) {
+	client := GetClient(c)
+	if client == nil {
+		return
+	}
 
-type AddUserResponse struct {
-	User *passwd.User `json:"user"`
-	Err  error        `json:"error"`
+	req := UserRequest{}
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, UserResponse{
+			Err: errors.Wrap(err, "bad json format"),
+		})
+		return
+	}
+
+	user, err := client.AddUser(req.User, req.CreateHome)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UserResponse{
+			Err: err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, UserResponse{
+		User: user,
+	})
 }
 
 func AddUser(c *gin.Context) {
@@ -47,10 +59,10 @@ func AddUser(c *gin.Context) {
 		return
 	}
 
-	req := AddUserRequest{}
+	req := UserRequest{}
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, AddUserResponse{
+		c.JSON(http.StatusUnprocessableEntity, UserResponse{
 			Err: errors.Wrap(err, "bad json format"),
 		})
 		return
@@ -58,13 +70,13 @@ func AddUser(c *gin.Context) {
 
 	user, err := client.AddUser(req.User, req.CreateHome)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, AddUserResponse{
+		c.JSON(http.StatusInternalServerError, UserResponse{
 			Err: err,
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, AddUserResponse{
+	c.JSON(http.StatusOK, UserResponse{
 		User: user,
 	})
 }

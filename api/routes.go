@@ -20,6 +20,7 @@ func AddRoutes(r *gin.Engine) *gin.Engine {
 	r.POST("/delete-group", DeleteGroup)
 
 	r.POST("/get-users", GetUsers)
+	r.POST("/find-user", FindUser)
 	r.POST("/add-user", AddUser)
 
 	return r

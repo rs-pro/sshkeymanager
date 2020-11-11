@@ -33,31 +33,11 @@ func (c *Client) ClearUserCache() error {
 }
 
 func (c *Client) GetUserByUid(uid string) (*passwd.User, error) {
-	users, err := c.GetUsers()
-	if err != nil {
-		log.Println(err)
-		return nil, nil
-	}
-	for _, u := range users {
-		if u.UID == uid {
-			return &u, nil
-		}
-	}
-	return nil, nil
+	return c.FindUser(&passwd.User{UID: uid})
 }
 
 func (c *Client) GetUserByName(name string) (*passwd.User, error) {
-	users, err := c.GetUsers()
-	if err != nil {
-		log.Println(err)
-		return nil, nil
-	}
-	for _, u := range users {
-		if u.Name == name {
-			return &u, nil
-		}
-	}
-	return nil, nil
+	return c.FindUser(&passwd.User{Name: name})
 }
 
 func (c *Client) FindUser(user *passwd.User) (*passwd.User, error) {

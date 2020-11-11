@@ -16,8 +16,9 @@ func (c *Client) GetGroups() ([]group.Group, error) {
 }
 
 func (c *Client) ClearGroupCache() error {
-	_, err := c.Execute("clear-group-cache", &api.EmptyRequest{}, &api.EmptyResponse{})
-	return err
+	//_, err := c.Execute("clear-group-cache", &api.EmptyRequest{}, &api.EmptyResponse{})
+	//return err
+	return nil
 }
 
 func (c *Client) FindGroup(g *group.Group) (*group.Group, error) {

@@ -6,13 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"github.com/rs-pro/sshkeymanager/group"
 )
-
-type GetGroupsResponse struct {
-	Groups []group.Group `json:"groups"`
-	Err    error         `json:"error"`
-}
 
 func GetGroups(c *gin.Context) {
 	client := GetClient(c)
@@ -20,18 +14,18 @@ func GetGroups(c *gin.Context) {
 		return
 	}
 	groups, err := client.GetGroups()
-	c.JSON(http.StatusOK, GetGroupsResponse{
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, GroupsResponse{
+			Err: err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, GroupsResponse{
 		Groups: groups,
 		Err:    err,
 	})
-}
-
-type FindGroupRequest struct {
-	Group *group.Group `json:"group"`
-}
-type FindGroupResponse struct {
-	Group *group.Group `json:"group"`
-	Err   error        `json:"error"`
 }
 
 func FindGroup(c *gin.Context) {
@@ -40,10 +34,10 @@ func FindGroup(c *gin.Context) {
 		return
 	}
 
-	req := FindGroupRequest{}
+	req := GroupRequest{}
 	err := c.BindJSON(req)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, FindGroupResponse{
+		c.JSON(http.StatusUnprocessableEntity, GroupResponse{
 			Err: errors.Wrap(err, "bad json format"),
 		})
 		return
@@ -51,22 +45,14 @@ func FindGroup(c *gin.Context) {
 
 	g, err := client.AddGroup(req.Group)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": err.Error(),
+		c.JSON(http.StatusInternalServerError, GroupResponse{
+			Err: err,
 		})
 		return
 	}
 	log.Println("added group:", g.GID, g.Name, g.Members)
 
-	c.JSON(http.StatusOK, AddGroupResponse{Group: g})
-}
-
-type AddGroupRequest struct {
-	Group *group.Group `json:"group"`
-}
-type AddGroupResponse struct {
-	Group *group.Group `json:"group"`
-	Err   error        `json:"error"`
+	c.JSON(http.StatusOK, GroupResponse{Group: g})
 }
 
 func AddGroup(c *gin.Context) {
@@ -75,10 +61,10 @@ func AddGroup(c *gin.Context) {
 		return
 	}
 
-	req := AddGroupRequest{}
+	req := GroupRequest{}
 	err := c.BindJSON(req)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, AddGroupResponse{
+		c.JSON(http.StatusUnprocessableEntity, GroupResponse{
 			Err: errors.Wrap(err, "bad json format"),
 		})
 		return
@@ -86,22 +72,14 @@ func AddGroup(c *gin.Context) {
 
 	g, err := client.AddGroup(req.Group)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, AddGroupResponse{
+		c.JSON(http.StatusInternalServerError, GroupResponse{
 			Err: err,
 		})
 		return
 	}
 	log.Println("added group:", g.GID, g.Name, g.Members)
 
-	c.JSON(http.StatusOK, AddGroupResponse{Group: g})
-}
-
-type DeleteGroupRequest struct {
-	Group *group.Group `json:"group"`
-}
-type DeleteGroupResponse struct {
-	Group *group.Group `json:"group"`
-	Err   error        `json:"error"`
+	c.JSON(http.StatusOK, GroupResponse{Group: g})
 }
 
 func DeleteGroup(c *gin.Context) {
@@ -110,10 +88,10 @@ func DeleteGroup(c *gin.Context) {
 		return
 	}
 
-	req := DeleteGroupRequest{}
+	req := GroupRequest{}
 	err := c.BindJSON(req)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, AddGroupResponse{
+		c.JSON(http.StatusUnprocessableEntity, GroupResponse{
 			Err: errors.Wrap(err, "bad json format"),
 		})
 		return
@@ -125,11 +103,11 @@ func DeleteGroup(c *gin.Context) {
 
 	_, err = client.DeleteGroup(req.Group)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, AddGroupResponse{
+		c.JSON(http.StatusInternalServerError, GroupResponse{
 			Err: err,
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, DeleteGroupResponse{Group: req.Group})
+	c.JSON(http.StatusOK, GroupResponse{Group: req.Group})
 }
