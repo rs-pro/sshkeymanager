@@ -1,4 +1,0 @@
-gin_mode: release
-listen: 127.0.0.1:12010
-api_key: niEdWoakna5
-timeout: 3600
