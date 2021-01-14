@@ -8,6 +8,7 @@ import (
 	"github.com/rs-pro/sshkeymanager/passwd"
 )
 
+// GetUsers lists all users from /etc/passwd
 func (c *Client) GetUsers() ([]passwd.User, error) {
 	if c == nil {
 		return nil, errors.New("client not initialized")
@@ -27,20 +28,24 @@ func (c *Client) GetUsers() ([]passwd.User, error) {
 	return *c.UsersCache, nil
 }
 
+// ClearUserCache clears user cache for a client
 func (c *Client) ClearUserCache() error {
 	c.UsersCache = nil
 	return nil
 }
 
+// GetUserByUid finds user in /etc/passwd by uid
 func (c *Client) GetUserByUid(uid string) (*passwd.User, error) {
-	return c.FindUser(&passwd.User{UID: uid})
+	return c.FindUser(passwd.User{UID: uid})
 }
 
+// GetUserByName finds user in /etc/passwd by name
 func (c *Client) GetUserByName(name string) (*passwd.User, error) {
-	return c.FindUser(&passwd.User{Name: name})
+	return c.FindUser(passwd.User{Name: name})
 }
 
-func (c *Client) FindUser(user *passwd.User) (*passwd.User, error) {
+// GetUserByName finds user in /etc/passwd by passwd.User object (uid and name are supported)
+func (c *Client) FindUser(user passwd.User) (*passwd.User, error) {
 	users, err := c.GetUsers()
 	if err != nil {
 		log.Println(err)
@@ -54,33 +59,35 @@ func (c *Client) FindUser(user *passwd.User) (*passwd.User, error) {
 	return nil, nil
 }
 
-func (c *Client) CreateHome(u *passwd.User) (*passwd.User, error) {
+// CreateHome creates user's home directory
+func (c *Client) CreateHome(u passwd.User) (*passwd.User, error) {
 	if u.Name == "" {
-		return u, errors.New("user name cannot be empty")
+		return nil, errors.New("user name cannot be empty")
 	}
 	if u.Home == "" {
 		u.Home = "/home/" + u.Name
 	}
 
-	err := c.CreateSSHDir(u)
+	err := c.createSSHDir(u)
 	if err != nil {
-		return u, err
+		return nil, err
 	}
 
 	so, se, err := c.Execute("cp -rT /etc/skel " + shellescape.Quote(u.Home))
 	if err != nil {
-		return u, errors.Wrap(err, so+se)
+		return nil, errors.Wrap(err, so+se)
 	}
 
-	err = c.ChownHomedir(u)
+	err = c.chownHomedir(u)
 	if err != nil {
-		return u, err
+		return nil, err
 	}
 
-	return u, nil
+	return &u, nil
 }
 
-func (c *Client) AddUser(user *passwd.User, createHome bool) (*passwd.User, error) {
+// AddUser adds a user
+func (c *Client) AddUser(user passwd.User, createHome bool) (*passwd.User, error) {
 	if user.Name == "" {
 		return nil, errors.New("user name cannot be empty")
 	}
@@ -104,14 +111,15 @@ func (c *Client) AddUser(user *passwd.User, createHome bool) (*passwd.User, erro
 	}
 
 	if createHome {
-		u, err = c.CreateHome(u)
+		u, err = c.CreateHome(*u)
 		return u, err
 	} else {
 		return u, nil
 	}
 }
 
-func (c *Client) DeleteUser(user *passwd.User, removeHome bool) (*passwd.User, error) {
+// DeleteUser deletes a user
+func (c *Client) DeleteUser(user passwd.User, removeHome bool) (*passwd.User, error) {
 	u, _ := c.FindUser(user)
 	if u == nil {
 		return nil, errors.New("user not found, so not deleted")

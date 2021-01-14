@@ -31,7 +31,7 @@ func (c *Client) ClearGroupCache() error {
 	return nil
 }
 
-func (c *Client) FindGroup(group *group.Group) (*group.Group, error) {
+func (c *Client) FindGroup(group group.Group) (*group.Group, error) {
 	groups, err := c.GetGroups()
 	if err != nil {
 		log.Println("failed to get groups", err)
@@ -45,7 +45,7 @@ func (c *Client) FindGroup(group *group.Group) (*group.Group, error) {
 	return nil, nil
 }
 
-func (c *Client) AddGroup(group *group.Group) (*group.Group, error) {
+func (c *Client) AddGroup(group group.Group) (*group.Group, error) {
 	if group.Name == "" {
 		return nil, errors.New("group name cannot be empty")
 	}
@@ -68,7 +68,7 @@ func (c *Client) AddGroup(group *group.Group) (*group.Group, error) {
 	return g, nil
 }
 
-func (c *Client) DeleteGroup(group *group.Group) (*group.Group, error) {
+func (c *Client) DeleteGroup(group group.Group) (*group.Group, error) {
 	if group.Name == "" {
 		return nil, errors.New("group name cannot be empty")
 	}

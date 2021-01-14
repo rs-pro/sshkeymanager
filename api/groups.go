@@ -43,7 +43,14 @@ func FindGroup(c *gin.Context) {
 		return
 	}
 
-	g, err := client.AddGroup(req.Group)
+	if req.Group == nil {
+		c.JSON(http.StatusInternalServerError, KeyResponse{
+			Err: &KmError{errors.New("no group data provided")},
+		})
+		return
+	}
+
+	g, err := client.AddGroup(*req.Group)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GroupResponse{
 			Err: &KmError{err},
@@ -70,16 +77,22 @@ func AddGroup(c *gin.Context) {
 		return
 	}
 
-	g, err := client.AddGroup(req.Group)
+	if req.Group == nil {
+		c.JSON(http.StatusInternalServerError, KeyResponse{
+			Err: &KmError{errors.New("no group data provided")},
+		})
+		return
+	}
+
+	group, err := client.AddGroup(*req.Group)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GroupResponse{
 			Err: &KmError{err},
 		})
 		return
 	}
-	log.Println("added group:", g.GID, g.Name, g.Members)
 
-	c.JSON(http.StatusOK, GroupResponse{Group: g})
+	c.JSON(http.StatusOK, GroupResponse{Group: group})
 }
 
 func DeleteGroup(c *gin.Context) {
@@ -97,11 +110,14 @@ func DeleteGroup(c *gin.Context) {
 		return
 	}
 
-	if req.Group.Name == "" && req.Group.GID != "" {
-		req.Group, _ = client.FindGroup(req.Group)
+	if req.Group == nil {
+		c.JSON(http.StatusInternalServerError, KeyResponse{
+			Err: &KmError{errors.New("no group data provided")},
+		})
+		return
 	}
 
-	_, err = client.DeleteGroup(req.Group)
+	group, err := client.DeleteGroup(*req.Group)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GroupResponse{
 			Err: &KmError{err},
@@ -109,5 +125,5 @@ func DeleteGroup(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, GroupResponse{Group: req.Group})
+	c.JSON(http.StatusOK, GroupResponse{Group: group})
 }

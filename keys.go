@@ -2,7 +2,6 @@ package sshkeymanager
 
 import (
 	"log"
-	"strings"
 
 	"github.com/alessio/shellescape"
 	"github.com/pkg/errors"
@@ -32,17 +31,26 @@ func (e *KeyExistsError) Error() string {
 	return "Key to add already present in authorized_keys"
 }
 
-func (c *Client) DeleteKey(user passwd.User, key string) error {
+func (c *Client) FindKey(user passwd.User, key authorized_keys.SSHKey) (*authorized_keys.SSHKey, error) {
+	keys, err := c.GetKeys(user)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, k := range keys {
+		if k.Key == key.Key || k.Email == key.Email {
+			return &k, nil
+		}
+	}
+
+	// Key not found
+	return nil, nil
+}
+
+func (c *Client) DeleteKey(user passwd.User, key authorized_keys.SSHKey) error {
 	var (
 		newKeys []authorized_keys.SSHKey
-		newKey  authorized_keys.SSHKey
 	)
-
-	fields := strings.Fields(key)
-	newKey.Key = fields[0] + " " + fields[1]
-	if len(fields) > 2 {
-		newKey.Email = fields[2]
-	}
 
 	keys, err := c.GetKeys(user)
 	if err != nil {
@@ -51,7 +59,7 @@ func (c *Client) DeleteKey(user passwd.User, key string) error {
 
 	var keyExist bool
 	for _, k := range keys {
-		if k.Key != newKey.Key {
+		if k.Key != key.Key {
 			newKeys = append(newKeys, k)
 		} else {
 			keyExist = true
@@ -62,17 +70,12 @@ func (c *Client) DeleteKey(user passwd.User, key string) error {
 		return &KeyDoesNotExistError{}
 	}
 
-	return c.WriteKeys(&user, newKeys)
+	return c.WriteKeys(user, newKeys)
 }
 
-func (c *Client) AddKey(user passwd.User, key string) error {
+func (c *Client) AddKey(user passwd.User, key authorized_keys.SSHKey) error {
 	var k authorized_keys.SSHKey
 
-	fields := strings.Fields(key)
-	k.Key = fields[0] + " " + fields[1]
-	if len(fields) > 2 {
-		k.Email = fields[2]
-	}
 	keys, err := c.GetKeys(user)
 
 	if err != nil {
@@ -85,15 +88,15 @@ func (c *Client) AddKey(user passwd.User, key string) error {
 		}
 	}
 
-	return c.WriteKeys(&user, append(keys, k))
+	return c.WriteKeys(user, append(keys, key))
 }
 
-func (c *Client) WriteKeys(user *passwd.User, keys []authorized_keys.SSHKey) error {
+func (c *Client) WriteKeys(user passwd.User, keys []authorized_keys.SSHKey) error {
 	if user.Name == "" {
 		return errors.New("no user name")
 	}
 
-	err := c.CreateSSHDir(user)
+	err := c.createSSHDir(user)
 	if err != nil {
 		return err
 	}
@@ -104,14 +107,14 @@ func (c *Client) WriteKeys(user *passwd.User, keys []authorized_keys.SSHKey) err
 		return err
 	}
 
-	err = c.ChownSSH(user)
+	err = c.chownSSH(user)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) CreateSSHDir(user *passwd.User) error {
+func (c *Client) createSSHDir(user passwd.User) error {
 	so, se, err := c.Execute("mkdir -p " + shellescape.Quote(user.Home+"/.ssh"))
 	if err != nil {
 		return errors.Wrap(err, so+se)
@@ -119,14 +122,18 @@ func (c *Client) CreateSSHDir(user *passwd.User) error {
 	return nil
 }
 
-func (c *Client) ChownHomedir(user *passwd.User) error {
+func (c *Client) chownHomedir(user passwd.User) error {
 	if user.Name == "" {
 		return errors.New("no user name")
 	}
 
-	g := &group.Group{}
-	g.GID = user.GID
-	g, _ = c.FindGroup(g)
+	g, err := c.FindGroup(group.Group{GID: user.GID})
+	if err != nil {
+		return err
+	}
+	if g == nil {
+		return errors.New("group not found")
+	}
 	if g.Name == "" {
 		return errors.New("failed to find group")
 	}
@@ -138,14 +145,18 @@ func (c *Client) ChownHomedir(user *passwd.User) error {
 	return nil
 }
 
-func (c *Client) ChownSSH(user *passwd.User) error {
+func (c *Client) chownSSH(user passwd.User) error {
 	if user.Name == "" {
 		return errors.New("no user name")
 	}
 
-	g := &group.Group{}
-	g.GID = user.GID
-	g, _ = c.FindGroup(g)
+	g, err := c.FindGroup(group.Group{GID: user.GID})
+	if err != nil {
+		return err
+	}
+	if g == nil {
+		return errors.New("group not found")
+	}
 	if g.Name == "" {
 		return errors.New("failed to find group")
 	}

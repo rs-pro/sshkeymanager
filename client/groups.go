@@ -21,8 +21,8 @@ func (c *Client) ClearGroupCache() error {
 	return nil
 }
 
-func (c *Client) FindGroup(g *group.Group) (*group.Group, error) {
-	r, err := c.Execute("find-group", &api.GroupRequest{Group: g}, &api.GroupsResponse{})
+func (c *Client) FindGroup(g group.Group) (*group.Group, error) {
+	r, err := c.Execute("find-group", &api.GroupRequest{Group: &g}, &api.GroupResponse{})
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +31,8 @@ func (c *Client) FindGroup(g *group.Group) (*group.Group, error) {
 	return gr.Group, gr.Err.Err()
 }
 
-func (c *Client) AddGroup(g *group.Group) (*group.Group, error) {
-	r, err := c.Execute("add-group", &api.GroupRequest{Group: g}, &api.GroupResponse{})
+func (c *Client) AddGroup(g group.Group) (*group.Group, error) {
+	r, err := c.Execute("add-group", &api.GroupRequest{Group: &g}, &api.GroupResponse{})
 	if err != nil {
 		return nil, err
 	}
@@ -41,8 +41,8 @@ func (c *Client) AddGroup(g *group.Group) (*group.Group, error) {
 	return gr.Group, gr.Err.Err()
 }
 
-func (c *Client) DeleteGroup(g *group.Group) (*group.Group, error) {
-	r, err := c.Execute("delete-group", &api.GroupRequest{Group: g}, &api.GroupResponse{})
+func (c *Client) DeleteGroup(g group.Group) (*group.Group, error) {
+	r, err := c.Execute("delete-group", &api.GroupRequest{Group: &g}, &api.GroupResponse{})
 	if err != nil {
 		return nil, err
 	}

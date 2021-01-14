@@ -4,7 +4,11 @@ Includes a golang library, API server and client library, and a CLI tool with su
 
 ## Project status:
 
-Pre-alpha. Key management works, but most extra features (api, client-server mode etc) are not finished.
+Beta. Key management and most extra features (api, client-server mode) work.
+
+#### Known issues:
+
+- no locking is present (when attempting to add multiple keys from multiple goroutines to one user at the same time, chances are only one will be added)
 
 ## Security contact
 

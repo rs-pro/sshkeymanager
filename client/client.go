@@ -13,9 +13,11 @@ type Client struct {
 	ApiKey    string
 	ApiHost   string
 	ApiClient *resty.Client
-	Host      string
-	Port      string
-	User      string
+	// ApiComment is used to add extra info (like user that performed the action) to keyserver log
+	ApiComment string
+	Host       string
+	Port       string
+	User       string
 }
 
 func NewClient(apiHost, apiKey string) *Client {
@@ -33,9 +35,10 @@ func (c *Client) R() *resty.Request {
 	return c.ApiClient.R().
 		SetHeader("X-Api-Key", c.ApiKey).
 		SetQueryParams(map[string]string{
-			"host": c.Host,
-			"port": c.Port,
-			"user": c.User,
+			"host":    c.Host,
+			"port":    c.Port,
+			"user":    c.User,
+			"comment": c.ApiComment,
 		})
 }
 

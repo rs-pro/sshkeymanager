@@ -1,13 +1,13 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/pkg/errors"
 	"github.com/rs-pro/sshkeymanager"
+	"github.com/rs-pro/sshkeymanager/authorized_keys"
 	"github.com/rs-pro/sshkeymanager/client"
 	"github.com/rs-pro/sshkeymanager/group"
 	"github.com/rs-pro/sshkeymanager/passwd"
@@ -28,7 +28,9 @@ func getClient() (sshkeymanager.ClientInterface, error) {
 		if ApiKey == "" {
 			return nil, errors.New("no api key provided (or remove key server)")
 		}
-		return client.NewClient(KeyServer, ApiKey).WithConfig(Host, Port, User), nil
+		client := client.NewClient(KeyServer, ApiKey).WithConfig(Host, Port, User)
+		client.ApiComment = "sshkeymanager-cli"
+		return client, nil
 	} else {
 		return sshkeymanager.NewClient(Host, Port, User, sshkeymanager.DefaultConfig())
 	}
@@ -112,6 +114,40 @@ func main() {
 			},
 		},
 		{
+			Name:  "find-group",
+			Usage: "find group",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "name",
+					Usage: "group name",
+				},
+				&cli.StringFlag{
+					Name:  "gid",
+					Usage: "gid",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				client, err := getClient()
+				if err != nil {
+					return err
+				}
+				g := group.Group{}
+				g.GID = c.String("gid")
+				g.Name = c.String("name")
+				gr, err := client.FindGroup(g)
+				if err != nil {
+					return err
+				}
+				if gr == nil {
+					log.Println("group not found")
+				} else {
+					log.Println("group found:", gr.GID, gr.Name)
+				}
+
+				return nil
+			},
+		},
+		{
 			Name:  "add-group",
 			Usage: "add group",
 			Flags: []cli.Flag{
@@ -133,16 +169,16 @@ func main() {
 				if err != nil {
 					return err
 				}
-				g := &group.Group{}
+				g := group.Group{}
 				g.GID = c.String("gid")
 				g.Name = c.String("name")
 				g.Members = c.String("members")
 
-				g, err = client.AddGroup(g)
+				gr, err := client.AddGroup(g)
 				if err != nil {
 					return err
 				}
-				log.Println("added group:", g.GID, g.Name, g.Members)
+				log.Println("added group:", gr.GID, gr.Name, gr.Members)
 				return nil
 			},
 		},
@@ -164,21 +200,15 @@ func main() {
 				if err != nil {
 					return err
 				}
-				g := &group.Group{}
+				g := group.Group{}
 				g.GID = c.String("gid")
 				g.Name = c.String("name")
-				if g.Name == "" && g.GID != "" {
-					g, err = client.FindGroup(g)
-					if err != nil {
-						return err
-					}
-				}
 
-				_, err = client.DeleteGroup(g)
+				gr, err := client.DeleteGroup(g)
 				if err != nil {
 					return err
 				}
-				log.Println("deleted group:", g.GID, g.Name)
+				log.Println("deleted group:", gr.GID, gr.Name)
 				return nil
 			},
 		},
@@ -206,6 +236,39 @@ func main() {
 					})
 				}
 				table.Render()
+				return nil
+			},
+		},
+		{
+			Name:  "find-user",
+			Usage: "find user",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "name",
+					Usage: "user name",
+				},
+				&cli.StringFlag{
+					Name:  "uid",
+					Usage: "user uid",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				client, err := getClient()
+				if err != nil {
+					return err
+				}
+				u := passwd.User{}
+				u.Name = c.String("name")
+				u.UID = c.String("uid")
+				user, err := client.FindUser(u)
+				if err != nil {
+					return err
+				}
+				if user == nil {
+					log.Println("user not found")
+				} else {
+					log.Println("user found:", u.Name, u.UID, u.GID, u.Home)
+				}
 				return nil
 			},
 		},
@@ -248,7 +311,7 @@ func main() {
 				if err != nil {
 					return err
 				}
-				u := &passwd.User{}
+				u := passwd.User{}
 				u.Name = c.String("name")
 				u.UID = c.String("uid")
 				u.GID = c.String("gid")
@@ -260,12 +323,12 @@ func main() {
 				}
 				createHome := c.Bool("create-home")
 
-				u, err = client.AddUser(u, createHome)
+				us, err := client.AddUser(u, createHome)
 				if err != nil {
 					return err
 				}
 
-				log.Println("added user:", u.Name, u.UID, u.GID, u.Home)
+				log.Println("added user:", us.Name, us.UID, us.GID, us.Home)
 				return nil
 			},
 		},
@@ -291,21 +354,21 @@ func main() {
 				if err != nil {
 					return err
 				}
-				u := &passwd.User{}
+				u := passwd.User{}
 				u.Name = c.String("name")
 				u.UID = c.String("uid")
 				deleteHome := c.Bool("delete-home")
 
-				u, err = client.DeleteUser(u, deleteHome)
+				us, err := client.DeleteUser(u, deleteHome)
 				if err != nil {
 					return err
 				}
-				log.Println("deleted user:", u.Name, u.UID, u.GID)
+				log.Println("deleted user:", us.Name, us.UID, us.GID)
 				return nil
 			},
 		},
 		{
-			Name:  "list-keys",
+			Name:  "get-keys",
 			Usage: "list keys",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
@@ -322,18 +385,18 @@ func main() {
 				if err != nil {
 					return err
 				}
-				u := &passwd.User{}
+				u := passwd.User{}
 				u.Name = c.String("name")
 				u.UID = c.String("uid")
-				u, err = client.FindUser(u)
+				us, err := client.FindUser(u)
 				if err != nil {
 					return err
 				}
-				if u == nil {
+				if us == nil {
 					return errors.New("user not found")
 				}
-				log.Println("found user:", u.Name, u.UID, u.GID)
-				keys, err := client.GetKeys(*u)
+				log.Println("found user:", us.Name, us.UID, us.GID)
+				keys, err := client.GetKeys(*us)
 				if err != nil {
 					return err
 				}
@@ -363,19 +426,24 @@ func main() {
 					return err
 				}
 
-				u := &passwd.User{}
+				u := passwd.User{}
 				u.Name = c.String("name")
 				u.UID = c.String("uid")
-				u, err = client.FindUser(u)
+				us, err := client.FindUser(u)
 				if err != nil {
 					return err
 				}
-				if u == nil {
+				if us == nil {
 					return errors.New("user not found")
 				}
-				log.Println("found user:", u.Name, u.UID, u.GID)
+				log.Println("found user:", us.Name, us.UID, us.GID)
+
 				args := c.Args().Slice()
-				err = client.AddKey(*u, strings.Join(args, " "))
+				keys, err := authorized_keys.Parse(args[0])
+				if us == nil {
+					return errors.Wrap(err, "failed to parse key")
+				}
+				err = client.AddKey(*us, keys[0])
 				if err != nil {
 					return err
 				}
@@ -403,19 +471,24 @@ func main() {
 					return err
 				}
 
-				u := &passwd.User{}
+				u := passwd.User{}
 				u.Name = c.String("name")
 				u.UID = c.String("uid")
-				u, err = client.FindUser(u)
+				us, err := client.FindUser(u)
 				if err != nil {
 					return err
 				}
-				if u == nil {
+				if us == nil {
 					return errors.New("user not found")
 				}
-				log.Println("found user:", u.Name, u.UID, u.GID)
+				log.Println("found user:", us.Name, us.UID, us.GID)
+
 				args := c.Args().Slice()
-				err = client.DeleteKey(*u, strings.Join(args, " "))
+				keys, err := authorized_keys.Parse(args[0])
+				if us == nil {
+					return errors.Wrap(err, "failed to parse key")
+				}
+				err = client.DeleteKey(*us, keys[0])
 				if err != nil {
 					return err
 				}
