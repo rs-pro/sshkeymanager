@@ -1,7 +1,12 @@
 package client
 
 import (
+	"errors"
+	"reflect"
+	"strconv"
+
 	"github.com/go-resty/resty/v2"
+	"github.com/rs-pro/sshkeymanager/api"
 )
 
 type Client struct {
@@ -14,10 +19,13 @@ type Client struct {
 }
 
 func NewClient(apiHost, apiKey string) *Client {
+	r := resty.New()
+	r.SetDebug(true)
+
 	return &Client{
 		ApiKey:    apiKey,
 		ApiHost:   apiHost,
-		ApiClient: resty.New(),
+		ApiClient: r,
 	}
 }
 
@@ -46,9 +54,36 @@ func (c *Client) GetURL(method string) string {
 	return c.ApiHost + "/" + method
 }
 
-func (c *Client) Execute(method string, request, result interface{}) (*resty.Response, error) {
-	return c.R().
+func (c *Client) Execute(method string, request, result interface{}) (interface{}, error) {
+	r, err := c.R().
 		SetBody(request).
 		SetResult(result).
+		SetError(&api.BasicError{}).
 		Post(c.GetURL(method))
+
+	if err != nil {
+		// err is returned in case of network or other non-keymanager error
+		return nil, err
+	}
+
+	if r.IsSuccess() {
+		return r.Result(), nil
+	}
+
+	if r.IsError() {
+		// in case of sshkeymanager error (not network etc) we do not return err, insted we set Err field in the response
+		out := result
+		ec := r.Error().(*api.BasicError)
+		var e error
+		if ec.Err != nil {
+			e = errors.New(*ec.Err)
+		} else {
+			e = errors.New("bad status code " + strconv.Itoa(r.StatusCode()))
+		}
+
+		reflect.Indirect(reflect.ValueOf(&out).Elem().Elem()).FieldByName("Err").Set(reflect.ValueOf(api.MakeKmError(e)))
+		return out, nil
+	}
+
+	return nil, errors.New("unexpected result (not success or error)")
 }

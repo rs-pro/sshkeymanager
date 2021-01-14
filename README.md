@@ -10,7 +10,11 @@ Pre-alpha. Key management works, but most extra features (api, client-server mod
 
 Please be responsible and contact me directly at glebtv [at] gmail.com in case you find security issues.
 
-### Not intended for web-facing applications. No safeguards or security measures included besides API Key. You should mplement your own.
+### Not intended for web-facing applications.
+
+#### No safeguards or security measures included besides API Key.
+
+#### You should implement your own.
 
 ```
 $ go get github.com/rs-pro/sshkeymanager

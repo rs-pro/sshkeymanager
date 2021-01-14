@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -14,8 +15,9 @@ func GetUsers(c *gin.Context) {
 	}
 	users, err := client.GetUsers()
 	if err != nil {
+		spew.Dump(err)
 		c.JSON(http.StatusInternalServerError, UsersResponse{
-			Err: err,
+			Err: &KmError{err},
 		})
 		return
 	}
@@ -35,7 +37,7 @@ func FindUser(c *gin.Context) {
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, UserResponse{
-			Err: errors.Wrap(err, "bad json format"),
+			Err: &KmError{errors.Wrap(err, "bad json format")},
 		})
 		return
 	}
@@ -43,7 +45,7 @@ func FindUser(c *gin.Context) {
 	user, err := client.AddUser(req.User, req.CreateHome)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, UserResponse{
-			Err: err,
+			Err: &KmError{err},
 		})
 		return
 	}
@@ -63,7 +65,7 @@ func AddUser(c *gin.Context) {
 	err := c.BindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, UserResponse{
-			Err: errors.Wrap(err, "bad json format"),
+			Err: &KmError{errors.Wrap(err, "bad json format")},
 		})
 		return
 	}
@@ -71,7 +73,7 @@ func AddUser(c *gin.Context) {
 	user, err := client.AddUser(req.User, req.CreateHome)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, UserResponse{
-			Err: err,
+			Err: &KmError{err},
 		})
 		return
 	}

@@ -17,14 +17,14 @@ func GetGroups(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GroupsResponse{
-			Err: err,
+			Err: &KmError{err},
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, GroupsResponse{
 		Groups: groups,
-		Err:    err,
+		Err:    &KmError{err},
 	})
 }
 
@@ -38,7 +38,7 @@ func FindGroup(c *gin.Context) {
 	err := c.BindJSON(req)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, GroupResponse{
-			Err: errors.Wrap(err, "bad json format"),
+			Err: &KmError{errors.Wrap(err, "bad json format")},
 		})
 		return
 	}
@@ -46,7 +46,7 @@ func FindGroup(c *gin.Context) {
 	g, err := client.AddGroup(req.Group)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GroupResponse{
-			Err: err,
+			Err: &KmError{err},
 		})
 		return
 	}
@@ -65,7 +65,7 @@ func AddGroup(c *gin.Context) {
 	err := c.BindJSON(req)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, GroupResponse{
-			Err: errors.Wrap(err, "bad json format"),
+			Err: &KmError{errors.Wrap(err, "bad json format")},
 		})
 		return
 	}
@@ -73,7 +73,7 @@ func AddGroup(c *gin.Context) {
 	g, err := client.AddGroup(req.Group)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GroupResponse{
-			Err: err,
+			Err: &KmError{err},
 		})
 		return
 	}
@@ -92,7 +92,7 @@ func DeleteGroup(c *gin.Context) {
 	err := c.BindJSON(req)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, GroupResponse{
-			Err: errors.Wrap(err, "bad json format"),
+			Err: &KmError{errors.Wrap(err, "bad json format")},
 		})
 		return
 	}
@@ -104,7 +104,7 @@ func DeleteGroup(c *gin.Context) {
 	_, err = client.DeleteGroup(req.Group)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GroupResponse{
-			Err: err,
+			Err: &KmError{err},
 		})
 		return
 	}

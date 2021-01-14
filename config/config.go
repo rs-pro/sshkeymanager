@@ -7,10 +7,10 @@ import (
 )
 
 type ConfigData struct {
-	GinMode         string   `yaml:"gin_mode"`
-	Listen          string   `yaml:"listen"`
-	ApiKey          string   `yaml:"api_key"`
-	Timeout         int      `yaml:"timeout"`
+	GinMode string `yaml:"gin_mode"`
+	Listen  string `yaml:"listen"`
+	ApiKey  string `yaml:"api_key"`
+	Log     bool   `yaml:"log"`
 }
 
 var Config ConfigData
@@ -28,4 +28,3 @@ func init() {
 		panic(err)
 	}
 }
-

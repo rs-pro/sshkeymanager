@@ -86,8 +86,8 @@ func main() {
 
 	App.Commands = []*cli.Command{
 		{
-			Name:  "list-groups",
-			Usage: "list groups",
+			Name:  "get-groups",
+			Usage: "get groups",
 			Action: func(c *cli.Context) error {
 				client, err := getClient()
 				if err != nil {
@@ -183,8 +183,8 @@ func main() {
 			},
 		},
 		{
-			Name:  "list-users",
-			Usage: "list users",
+			Name:  "get-users",
+			Usage: "get users",
 			Action: func(c *cli.Context) error {
 				client, err := getClient()
 				if err != nil {

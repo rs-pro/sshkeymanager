@@ -87,7 +87,7 @@ func GetClient(t *testing.T) *Client {
 	return client
 }
 
-func TestListGroups(t *testing.T) {
+func TestGetGroups(t *testing.T) {
 	client := GetClient(t)
 
 	users, err := client.GetUsers()
@@ -95,7 +95,7 @@ func TestListGroups(t *testing.T) {
 	assert.Len(t, users, 25) // value from a clean image
 }
 
-func TestListUsers(t *testing.T) {
+func TestGetUsers(t *testing.T) {
 	client := GetClient(t)
 
 	users, err := client.GetUsers()

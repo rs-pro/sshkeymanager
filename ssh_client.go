@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
@@ -53,12 +54,15 @@ func (c *Client) Execute(command string) (string, string, error) {
 	err = session.Run(c.Prefix() + command)
 	if err != nil {
 		log.Println("execute:", command, "result:", so.String(), se.String(), "error:", err)
-		return so.String(), se.String(), err
+		return strings.TrimSuffix(so.String(), "\n"), strings.TrimSuffix(se.String(), "\n"), err
 	}
 
 	if os.Getenv("DEBUG") == "YES" {
-		log.Println("execute:", command, "result:", so.String(), se.String())
+		log.Println("execute:", command)
+		log.Println("result:")
+		log.Println(so.String())
+		log.Println(se.String())
 	}
 
-	return so.String(), se.String(), nil
+	return strings.TrimSuffix(so.String(), "\n"), strings.TrimSuffix(se.String(), "\n"), nil
 }

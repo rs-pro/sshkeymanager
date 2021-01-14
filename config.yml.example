@@ -1,4 +1,4 @@
 gin_mode: release
 listen: 127.0.0.1:12010
 api_key: create-your-key
-timeout: 3600
+log: false

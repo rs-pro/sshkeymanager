@@ -16,12 +16,17 @@ func main() {
 	if listen == "" {
 		listen = "127.0.0.1:12020"
 	}
-	log.Println("keyserver starting, listen on:", listen)
 
 	r := gin.Default()
 	r.Use(api.CheckApiKey())
 	r.Use(api.SetClient(api.DefaultGetClient))
+	if config.Config.Log {
+		log.Println("enable full request log")
+		r.Use(api.RequestLoggerMiddleware())
+	}
+
 	r = api.AddRoutes(r)
 
+	log.Println("keyserver starting, listen on:", listen)
 	log.Fatal(r.Run(listen))
 }

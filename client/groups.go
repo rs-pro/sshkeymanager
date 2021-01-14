@@ -6,47 +6,47 @@ import (
 )
 
 func (c *Client) GetGroups() ([]group.Group, error) {
-	r, err := c.Execute("get-groups", &api.EmptyRequest{}, &api.GetGroupsResponse{})
+	r, err := c.Execute("get-groups", &api.EmptyRequest{}, &api.GroupsResponse{})
 	if err != nil {
 		return nil, err
 	}
 
-	gr := r.Result().(*api.GetGroupsResponse)
-	return gr.Groups, gr.Err
+	gr := r.(*api.GroupsResponse)
+	return gr.Groups, gr.Err.Err()
 }
 
 func (c *Client) ClearGroupCache() error {
-	//_, err := c.Execute("clear-group-cache", &api.EmptyRequest{}, &api.EmptyResponse{})
-	//return err
+	// NO OP - not needed in client-server mode
+	// method is present for interface compatibility
 	return nil
 }
 
 func (c *Client) FindGroup(g *group.Group) (*group.Group, error) {
-	r, err := c.Execute("find-group", &api.FindGroupRequest{Group: g}, &api.FindGroupResponse{})
+	r, err := c.Execute("find-group", &api.GroupRequest{Group: g}, &api.GroupsResponse{})
 	if err != nil {
 		return nil, err
 	}
 
-	gr := r.Result().(*api.AddGroupResponse)
-	return gr.Group, gr.Err
+	gr := r.(*api.GroupResponse)
+	return gr.Group, gr.Err.Err()
 }
 
 func (c *Client) AddGroup(g *group.Group) (*group.Group, error) {
-	r, err := c.Execute("add-group", &api.AddGroupRequest{Group: g}, &api.AddGroupResponse{})
+	r, err := c.Execute("add-group", &api.GroupRequest{Group: g}, &api.GroupResponse{})
 	if err != nil {
 		return nil, err
 	}
 
-	gr := r.Result().(*api.AddGroupResponse)
-	return gr.Group, gr.Err
+	gr := r.(*api.GroupResponse)
+	return gr.Group, gr.Err.Err()
 }
 
 func (c *Client) DeleteGroup(g *group.Group) (*group.Group, error) {
-	r, err := c.Execute("delete-group", &api.DeleteGroupRequest{Group: g}, &api.DeleteGroupResponse{})
+	r, err := c.Execute("delete-group", &api.GroupRequest{Group: g}, &api.GroupResponse{})
 	if err != nil {
 		return nil, err
 	}
 
-	gr := r.Result().(*api.DeleteGroupResponse)
-	return gr.Group, gr.Err
+	gr := r.(*api.GroupResponse)
+	return gr.Group, gr.Err.Err()
 }

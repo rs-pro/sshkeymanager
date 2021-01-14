@@ -6,19 +6,20 @@ import (
 )
 
 func (c *Client) GetUsers() ([]passwd.User, error) {
-	r, err := c.Execute("get-users", &api.EmptyRequest{}, &api.GetUsersResponse{})
+	r, err := c.Execute("get-users", &api.EmptyRequest{}, &api.UsersResponse{})
+	//spew.Dump(r, err)
 	if err != nil {
 		return nil, err
 	}
 
-	gr := r.Result().(*api.GetUsersResponse)
+	gr := r.(*api.UsersResponse)
 
-	return gr.Users, err
+	return gr.Users, gr.Err.Err()
 }
 
 func (c *Client) ClearUserCache() error {
-	//_, err := c.Execute("clear-user-cache", &api.EmptyRequest{}, &api.EmptyResponse{})
-	//return err
+	// NO OP - not needed in client-server mode
+	// method is present for interface compatibility
 	return nil
 }
 
