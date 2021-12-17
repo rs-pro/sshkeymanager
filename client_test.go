@@ -106,7 +106,7 @@ func TestGetUsers(t *testing.T) {
 func TestAddUser(t *testing.T) {
 	client := GetClient(t)
 
-	u, err := client.AddUser(&passwd.User{
+	u, err := client.AddUser(passwd.User{
 		Name:  "user",
 		GID:   "1000",
 		Home:  "/data/user",
