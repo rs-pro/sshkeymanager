@@ -52,19 +52,21 @@ func (c *Client) WriteFile(path string, content []byte) error {
 		fmt.Fprint(w, "\x00")
 		w.Close()
 
-		log.Println("reading stdout")
-		data, err := ioutil.ReadAll(r)
+		//log.Println("reading stdout")
+		//data, err := ioutil.ReadAll(r)
+		_, err = ioutil.ReadAll(r)
 		if err != nil {
 			log.Println("failed to read stdout", err)
 		}
 
-		log.Println("reading stderr")
-		edata, err := ioutil.ReadAll(e)
+		//log.Println("reading stderr")
+		//edata, err := ioutil.ReadAll(e)
+		_, err = ioutil.ReadAll(e)
 		if err != nil {
 			log.Println("failed to read stderr", err)
 		}
 
-		log.Println("scp response", string(data), string(edata), err)
+		//log.Println("scp response", string(data), string(edata), err)
 		session.Close()
 	}()
 

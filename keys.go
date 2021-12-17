@@ -74,8 +74,6 @@ func (c *Client) DeleteKey(user passwd.User, key authorized_keys.SSHKey) error {
 }
 
 func (c *Client) AddKey(user passwd.User, key authorized_keys.SSHKey) error {
-	var k authorized_keys.SSHKey
-
 	keys, err := c.GetKeys(user)
 
 	if err != nil {
@@ -83,7 +81,7 @@ func (c *Client) AddKey(user passwd.User, key authorized_keys.SSHKey) error {
 	}
 
 	for _, ck := range keys {
-		if k.Key == ck.Key {
+		if key.Key == ck.Key {
 			return &KeyExistsError{}
 		}
 	}

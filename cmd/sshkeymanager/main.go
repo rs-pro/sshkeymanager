@@ -448,6 +448,8 @@ func main() {
 					return err
 				}
 
+				log.Println("key added")
+
 				return nil
 			},
 		},
@@ -492,6 +494,8 @@ func main() {
 				if err != nil {
 					return err
 				}
+
+				log.Println("key deleted")
 
 				return nil
 			},
