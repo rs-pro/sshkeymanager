@@ -73,17 +73,21 @@ func WaitForSshServer(host, port string) {
 
 func TestSudo(t *testing.T) {
 	client, err := NewClient(host, port, "test", MakeConfig([]string{"./testdata/id_rsa"}))
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	assert.Equal(t, client.useSudo, true)
 
 	users, err := client.GetUsers()
 	assert.NoError(t, err)
-	assert.Len(t, users, 25) // value from a clean image
+	assert.Len(t, users, 23) // value from a clean Debian bookworm image
 }
 
 func GetClient(t *testing.T) *Client {
 	client, err := NewClient(host, port, "root", MakeConfig([]string{"./testdata/id_rsa"}))
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	return client
 }
 
@@ -92,7 +96,7 @@ func TestGetGroups(t *testing.T) {
 
 	users, err := client.GetUsers()
 	assert.NoError(t, err)
-	assert.Len(t, users, 25) // value from a clean image
+	assert.Len(t, users, 23) // value from a clean Debian bookworm image
 }
 
 func TestGetUsers(t *testing.T) {
@@ -100,7 +104,7 @@ func TestGetUsers(t *testing.T) {
 
 	users, err := client.GetUsers()
 	assert.NoError(t, err)
-	assert.Len(t, users, 25) // value from a clean image
+	assert.Len(t, users, 23) // value from a clean Debian bookworm image
 }
 
 func TestAddUser(t *testing.T) {
@@ -120,6 +124,6 @@ func TestAddUser(t *testing.T) {
 
 	users, err := client.GetUsers()
 	assert.NoError(t, err)
-	assert.Len(t, users, 26)
+	assert.Len(t, users, 24) // 23 base + 1 added
 
 }

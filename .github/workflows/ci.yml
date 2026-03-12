@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.1'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start test SSH server
+        run: docker compose up -d
+
+      - name: Wait for SSH to be ready
+        run: |
+          for i in {1..30}; do
+            if nc -z localhost 2222; then
+              echo "SSH is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "SSH failed to start"
+          exit 1
+
+      - name: Run unit tests
+        run: |
+          go test -v ./passwd/...
+          go test -v ./group/...
+          go test -v ./authorized_keys/...
+
+      - name: Run integration tests
+        run: go test -v -timeout 5m -run . ./...
+
+      - name: Stop test SSH server
+        if: always()
+        run: docker compose down

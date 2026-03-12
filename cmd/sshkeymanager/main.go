@@ -99,8 +99,8 @@ func main() {
 				if err != nil {
 					return err
 				}
-				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader([]string{"GID", "Name", "Password", "Members"})
+				table := tablewriter.NewTable(os.Stdout)
+				table.Header("GID", "Name", "Password", "Members")
 				for _, group := range groups {
 					table.Append([]string{
 						group.GID,
@@ -225,7 +225,7 @@ func main() {
 					return err
 				}
 				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader([]string{"UID", "GID", "Name", "Home", "Shell"})
+				table.Header([]string{"UID", "GID", "Name", "Home", "Shell"})
 				for _, user := range users {
 					table.Append([]string{
 						user.UID,

@@ -1,5 +1,3 @@
----
-version: "2.1"
 services:
   ssh:
     build: .
@@ -7,4 +5,15 @@ services:
     hostname: sshkeymanager-test
     ports:
       - "2222:2222"
+    networks:
+      - sshkeymanager_network
+    healthcheck:
+      test: ["CMD", "sshd", "-T"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
+networks:
+  sshkeymanager_network:
+    driver: bridge
